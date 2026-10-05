@@ -43,7 +43,7 @@
   # Use latest kernel.
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
-  # networking.hostName = "nixos"; # Define your hostname.
+   networking.hostName = "proteus"; # Define your hostname.
 
   # Configure network connections interactively with nmcli or nmtui.
   networking.networkmanager.enable = true;
@@ -108,6 +108,7 @@
   environment.systemPackages = with pkgs; [
     git
     tailscale
+    powertop
    ];
 
   # Some programs need SUID wrappers, can be configured further or are

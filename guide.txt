@@ -1,0 +1,19 @@
+.dotfiles/
+├── flake.nix
+├── hosts/
+│   ├── proteus/
+│   │   ├── default.nix
+│   │   ├── hardware-configuration.nix
+│   │   └── home.nix
+│   │
+│   └── hermes/
+│       ├── default.nix
+│       ├── hardware-configuration.nix
+│       └── home.nix
+│
+└── home/
+    ├── nvim.nix
+    ├── git.nix
+    ├── shell.nix
+    ├── kde.nix
+    └── packages.nix

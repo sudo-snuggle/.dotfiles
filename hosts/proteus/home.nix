@@ -1,6 +1,10 @@
 { config, pkgs, inputs, ... }:
 
 {
+  imports = [
+    ../../home/fish.nix
+  ];
+
   home.username = "yasiru";
   home.homeDirectory = "/home/yasiru";
   home.stateVersion = "26.05";
@@ -10,6 +14,6 @@
     # add user packages here later
   ];
 
-  # Programs (we'll add more later)
+  # Programs
   programs.home-manager.enable = true;
 }
