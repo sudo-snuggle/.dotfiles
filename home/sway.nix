@@ -59,34 +59,14 @@
         "XF86AudioRaiseVolume" = "exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+";
       };
 
-      bars = [
-        {
-          position = "top";
-          statusCommand = "${pkgs.i3status}/bin/i3status";
-          fonts = {
-            names = [ "JetBrainsMono Nerd Font" "Font Awesome 6 Free" ];
-            size = 10.0;
-          };
-          colors = {
-            background = "#1e1e2e";
-            statusline = "#cdd6f4";
-            separator  = "#6c7086";
-            focusedWorkspace = {
-              border = "#89b4fa"; background = "#89b4fa"; text = "#1e1e2e";
-            };
-            activeWorkspace = {
-              border = "#6c7086"; background = "#6c7086"; text = "#cdd6f4";
-            };
-            inactiveWorkspace = {
-              border = "#1e1e2e"; background = "#1e1e2e"; text = "#6c7086";
-            };
-            urgentWorkspace = {
-              border = "#f38ba8"; background = "#f38ba8"; text = "#1e1e2e";
-            };
-          };
-        }
-      ];
-
+        bars = [
+      {
+        position = "top";
+        # Point directly at the Home Manager-generated config
+        statusCommand = "${pkgs.i3status-rust}/bin/i3status-rs ~/.config/i3status-rust/config-top.toml";
+        # ...
+      }
+    ];
       gaps = {
         inner = 6;
         outer = 3;
