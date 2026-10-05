@@ -8,6 +8,8 @@
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
+      ../../modules/tlp.nix
+
     ];
 
   # disable the systemd-boot EFI boot loader.
@@ -107,7 +109,7 @@
      packages = with pkgs; [
        tree
        vscodium
-       qutebrowser
+       
      
      ];
    };

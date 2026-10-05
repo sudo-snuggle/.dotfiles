@@ -9,8 +9,8 @@
       
       flakepush-proteus = ''
         cd ~/.dotfiles
+        git add .
         sudo nixos-rebuild switch --flake .#proteus
-        and git add .
         and git commit -m "update nixos config"
         and git push
       '';
