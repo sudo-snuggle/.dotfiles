@@ -46,7 +46,7 @@
         "${mod}+Shift+e"     = "exit";
 
         # --- Screenshots (grimshot) ---
-        "Print"              = "exec grimshot save area";
+        "Print"              = "exec grimshot savecopy area";
         "Shift+Print"        = "exec grimshot save screen";
         "Ctrl+Print"         = "exec grimshot save active";
 
