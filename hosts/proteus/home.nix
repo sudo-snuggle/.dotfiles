@@ -6,7 +6,7 @@
     ../../home/fish.nix
     ../../home/sway.nix
     ../../home/kitty.nix
-    ../../home/stylix.nix
+   # ../../home/stylix.nix
   ];
 
   home.username = "yasiru";
