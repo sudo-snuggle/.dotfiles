@@ -76,14 +76,16 @@
   # Enable the X11 windowing system.
   services.xserver.enable = true;
 
-   hardware.graphics = {
-  enable = true;
+ 
+  # Enables VA-API support
+  hardware.graphics = {
+    enable = true;
+    extraPackages = with pkgs; [
+      intel-media-driver 
+      intel-vaapi-driver # Sometimes needed as a fallback, especially for browsers.
+    ];
+  };
 
-  extraPackages = with pkgs; [
-    intel-media-driver
-  ];
-};
-  
 
   # Configure keymap in X11
   # services.xserver.xkb.layout = "us";
