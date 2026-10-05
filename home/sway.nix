@@ -51,15 +51,7 @@
         {
           position = "top";
           statusCommand = "${pkgs.i3status}/bin/i3status";
-          colors = {
-            background = "#1a1b26";
-            statusline = "#a9b1d6";
-            separator  = "#414868";
-            focusedWorkspace  = { background = "#7aa2f7"; border = "#7aa2f7"; text = "#15161e"; };
-            activeWorkspace   = { background = "#3b4261"; border = "#3b4261"; text = "#a9b1d6"; };
-            inactiveWorkspace = { background = "#1a1b26"; border = "#1a1b26"; text = "#565f89"; };
-            urgentWorkspace   = { background = "#f7768e"; border = "#f7768e"; text = "#15161e"; };
-          };
+         
         }
       ];
 
