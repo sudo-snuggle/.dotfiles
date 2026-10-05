@@ -2,26 +2,31 @@
 
 {
   programs.fish = {
-  enable = true;
+    enable = true;
 
-  functions = {
+    functions = {
 
-
-    flakepush-proteus  = ''
-      cd ~/.dotfiles
-      sudo nixos-rebuild switch --flake .#proteus
-      and git add .
-      and git commit -m "update nixos config"
-      and git push
-    '';
-
-    
-    flakepull-hermes = ''
-      cd ~/.dotfiles
-      git pull
-      and sudo nixos-rebuild switch --flake .#hermes
+      
+      flakepush-proteus = ''
+        cd ~/.dotfiles
+        sudo nixos-rebuild switch --flake .#proteus
+        and git add .
+        and git commit -m "update nixos config"
+        and git push
       '';
 
+      flakepull-hermes = ''
+        cd ~/.dotfiles
+        git pull
+        and sudo nixos-rebuild switch --flake .#hermes
+      '';
+
+      pushnotes = ''
+        cd ~/scratch-notes
+        git add .
+        and git commit -m "update notes"
+        and git push
+      '';
+    };
   };
-};
 }

@@ -12,6 +12,9 @@
 │       └── home.nix
 │
 └── home/
+    |---themes
+        |----pink-dark
+        |----pink-light
     ├── nvim.nix
     ├── git.nix
     ├── shell.nix

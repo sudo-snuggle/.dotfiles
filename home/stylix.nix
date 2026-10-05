@@ -1,12 +1,13 @@
-{ inputs, ... }:
+{ config, pkgs, lib, ... }:
 
 {
-  imports = [
-  inputs.stylix.homeModules.stylix
-  ];
-
   stylix = {
-  enable = true;
-  base16Scheme = ./themes/pinky.nix;
+    enable = true;
+
+    # Pick one of these:
+    base16Scheme = ../../themes/pink-light.yaml;
+    # base16Scheme = ../../themes/pink-dark.yaml;
+
+    polarity = "light";  # or "dark" to match the theme
   };
 }
