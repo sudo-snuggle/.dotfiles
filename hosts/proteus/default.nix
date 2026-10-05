@@ -49,9 +49,11 @@
   networking.networkmanager.enable = true;
 
   # Set your time zone.
-  # time.timeZone = "Europe/Amsterdam";
+  time.timeZone = "Asia/Colombo";
   services.displayManager.sddm.enable = true;
   services.desktopManager.plasma6.enable = true;
+
+  programs.sway.enable = true;
 
   # Configure network proxy if necessary
   # networking.proxy.default = "http://user:password@proxy:port/";
