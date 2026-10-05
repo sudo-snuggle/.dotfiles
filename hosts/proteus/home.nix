@@ -6,6 +6,7 @@
     ../../home/fish.nix
     ../../home/sway.nix
     ../../home/kitty.nix
+    ../../home/i3bar.nix
    # ../../home/stylix.nix
   ];
 
