@@ -44,6 +44,8 @@
      
 #----------- hermes ---------------------
 
+  
+
       hermes = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
 
@@ -64,11 +66,13 @@
                 inherit inputs;
               };
 
-              users.yasiru = import ./home.nix;
+              users.yasiru = import ./hosts/hermes/home.nix;
             };
           }
         ];
       };
+
+# ------------------------------------------------
 
     };
   };
