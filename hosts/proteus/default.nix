@@ -70,7 +70,13 @@
   # Enable the X11 windowing system.
   services.xserver.enable = true;
 
+   hardware.graphics = {
+  enable = true;
 
+  extraPackages = with pkgs; [
+    intel-media-driver
+  ];
+};
   
 
   # Configure keymap in X11
