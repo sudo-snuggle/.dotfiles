@@ -104,6 +104,7 @@
      packages = with pkgs; [
        tree
        vscodium
+       qutebrowser
      
      ];
    };
