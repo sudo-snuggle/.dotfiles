@@ -6,7 +6,6 @@
     wrapperFeatures.gtk = true;
 
     config = {
-      # Use Alt (Mod1) or Super (Mod4) for Sway window management
       modifier = "Mod1";
 
       terminal = "${pkgs.kitty}/bin/kitty";
@@ -15,7 +14,6 @@
       input = {
         "type:keyboard" = {
           xkb_layout = "us";
-          # Removed xkb_options swap
           repeat_delay = "300";
           repeat_rate = "50";
         };
@@ -45,13 +43,47 @@
         "${mod}+Shift+l"     = "move right";
 
         "${mod}+Shift+r"     = "reload";
+        "${mod}+Shift+e"     = "exit";
+
+        # --- Screenshots (grimshot) ---
+        "Print"              = "exec grimshot save area";
+        "Shift+Print"        = "exec grimshot save screen";
+        "Ctrl+Print"         = "exec grimshot save active";
+
+        # --- ThinkPad F1/F2 Keys ---
+        # F1: Mute/unmute speakers
+        "XF86AudioMute"      = "exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
+        # F2: Volume down
+        "XF86AudioLowerVolume" = "exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-";
+        # F3 (optional, same row): Volume up
+        "XF86AudioRaiseVolume" = "exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+";
       };
 
       bars = [
         {
           position = "top";
           statusCommand = "${pkgs.i3status}/bin/i3status";
-         
+          fonts = {
+            names = [ "JetBrainsMono Nerd Font" "Font Awesome 6 Free" ];
+            size = 10.0;
+          };
+          colors = {
+            background = "#1e1e2e";
+            statusline = "#cdd6f4";
+            separator  = "#6c7086";
+            focusedWorkspace = {
+              border = "#89b4fa"; background = "#89b4fa"; text = "#1e1e2e";
+            };
+            activeWorkspace = {
+              border = "#6c7086"; background = "#6c7086"; text = "#cdd6f4";
+            };
+            inactiveWorkspace = {
+              border = "#1e1e2e"; background = "#1e1e2e"; text = "#6c7086";
+            };
+            urgentWorkspace = {
+              border = "#f38ba8"; background = "#f38ba8"; text = "#1e1e2e";
+            };
+          };
         }
       ];
 
@@ -70,5 +102,6 @@
   home.packages = with pkgs; [
     i3status
     wl-clipboard
+    sway-contrib.grimshot   
   ];
 }
