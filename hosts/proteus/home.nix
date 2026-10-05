@@ -4,6 +4,8 @@
   imports = [
     ../../home/fish.nix
     ../../home/sway.nix
+    ../../home/foot.nix
+
   ];
 
   home.username = "yasiru";
