@@ -8,7 +8,7 @@
     config = {
       modifier = "Control";
 
-      terminal = "${pkgs.foot}/bin/foot";
+      terminal = "${pkgs.foot}/bin/kitty";
       menu = "${pkgs.fuzzel}/bin/fuzzel";
 
       input = {
