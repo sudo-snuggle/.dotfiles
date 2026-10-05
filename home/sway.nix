@@ -6,15 +6,16 @@
     wrapperFeatures.gtk = true;
 
     config = {
-      modifier = "Control";
+      # Use Alt (Mod1) or Super (Mod4) for Sway window management
+      modifier = "Mod1";
 
-      terminal = "${pkgs.foot}/bin/kitty";
+      terminal = "${pkgs.kitty}/bin/kitty";
       menu = "${pkgs.fuzzel}/bin/fuzzel";
 
       input = {
         "type:keyboard" = {
           xkb_layout = "us";
-          xkb_options = "ctrl:swap_lalt_lctl";
+          # Removed xkb_options swap
           repeat_delay = "300";
           repeat_rate = "50";
         };

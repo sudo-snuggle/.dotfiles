@@ -8,10 +8,8 @@
       font_family = "monospace";
       font_size = 11.0;
       
-      # Map physical Alt (Control after swap) to copy and paste
+      # Standard Linux terminal clipboard shortcuts
       map = ''
-        ctrl+c copy_or_interrupt
-        ctrl+v paste_from_clipboard
         ctrl+shift+c copy_to_clipboard
         ctrl+shift+v paste_from_clipboard
       '';
