@@ -10,7 +10,7 @@
       ./hardware-configuration.nix
       ../../modules/tlp.nix
       ../../modules/thinkfan.nix
-
+      ../../modules/undervolt.nix
     ];
 
   # disable the systemd-boot EFI boot loader.
