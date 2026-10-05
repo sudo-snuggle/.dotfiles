@@ -110,7 +110,7 @@
      packages = with pkgs; [
        tree
        vscodium
-       
+       btop
      
      ];
    };
