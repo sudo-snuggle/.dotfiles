@@ -113,6 +113,7 @@
        tree
        vscodium
        btop
+       intel-gpu-tools
      
      ];
    };
