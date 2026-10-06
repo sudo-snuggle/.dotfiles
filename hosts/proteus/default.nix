@@ -80,7 +80,13 @@
   #   useXkbConfig = true; # use xkb.options in tty.
   # };
 
- 
+ programs.bash = {
+  enable = true;
+  shellAliases = {
+    fih = "fish";
+  };
+};
+
   # Enables VA-API support
   hardware.graphics = {
     enable = true;

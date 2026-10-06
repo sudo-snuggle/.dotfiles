@@ -4,9 +4,30 @@
   programs.fish = {
     enable = true;
 
-    functions = {
+    interactiveShellInit = ''
+      function fish_greeting
+        echo '
+     
+ 
+ 
+                        /\
+                       /  |
+                       \  o
+                   _.-`/`-._
+       _         _/         \_         _
+      ) `-._   _/  /O\   /O\  \_   _.-` (
+     )      `-/    `-'   `-'    \-`      (
+     )     _.-|      ___        |-._     (
+      )_.-`   \   .-'   `-._    /   `-._(
+               \   `-.___.--`  /
+          FIH   "-._       _.-"
+                    "-._.-"
 
-      
+        echo "Welcome to FIH, the friendly interactive hell"
+      end
+    '';
+
+    functions = {
       flakepush-proteus = ''
         cd ~/.dotfiles
         git add .
