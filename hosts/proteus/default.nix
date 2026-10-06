@@ -60,7 +60,12 @@
     enable = true;
     wrapperFeatures.gtk = true;
   };
-
+  
+  services.xserver = {
+  enable = true;
+  windowManager.i3.enable = true;
+  windowManager.dwm.enable = true;
+};
  # programs.niri.enable = true;
 
   # Configure network proxy if necessary
@@ -74,9 +79,6 @@
   #   keyMap = "us";
   #   useXkbConfig = true; # use xkb.options in tty.
   # };
-
-  # Enable the X11 windowing system.
-  services.xserver.enable = true;
 
  
   # Enables VA-API support
@@ -136,6 +138,9 @@
     git
     tailscale
     powertop
+    dmenu 
+    rofi 
+    picom 
    ];
 
   # Some programs need SUID wrappers, can be configured further or are
