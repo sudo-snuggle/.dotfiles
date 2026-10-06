@@ -47,16 +47,46 @@
 
         # --- Screenshots (grimshot) ---
         "Print"              = "exec grimshot savecopy area";
-        "Shift+Print"        = "exec grimshot save screen";
+        "Shift+Print"        = "exec grimshot savecopy screen";
         "Ctrl+Print"         = "exec grimshot save active";
 
-        # --- ThinkPad F1/F2 Keys ---
-        # F1: Mute/unmute speakers
-        "XF86AudioMute"      = "exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
-        # F2: Volume down
-        "XF86AudioLowerVolume" = "exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-";
-        # F3 (optional, same row): Volume up
-        "XF86AudioRaiseVolume" = "exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+";
+      #
+      # F1  - Mute speakers
+      "XF86AudioMute" = "exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
+
+      # F2  - Volume down
+      "XF86AudioLowerVolume" = "exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-";
+
+      # F3  - Volume up
+      "XF86AudioRaiseVolume" = "exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+";
+
+      # F4  - Mute/unmute microphone
+      "XF86AudioMicMute" = "exec wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle";
+
+      # F5  - Brightness down
+      "XF86MonBrightnessDown" = "exec brightnessctl --device intel_backlight set 5%-";
+
+      # F6  - Brightness up
+      "XF86MonBrightnessUp" = "exec brightnessctl --device intel_backlight set 5%+";
+
+      # F7  - Display/output switch
+      "XF86Display" = "exec wdisplays";
+
+      # F8  - Wireless
+      "XF86WLAN" = "exec nmcli radio wifi off && nmcli radio wifi on";
+
+      # F9  - Settings
+      "XF86Tools" = "exec swaymsg exec 'foot'";
+
+      # F10 - Search
+      "XF86Search" = "exec swaymsg exec 'firefox'";
+
+      # F11 - Keyboard/application action
+      "XF86Launch1" = "exec swaymsg exec 'foot'";
+
+      # F12 - ThinkPad/Favorites
+      "XF86Launch2" = "exec swaymsg exec 'firefox'";
+    
       };
 
         bars = [
