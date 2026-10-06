@@ -44,15 +44,15 @@
       DISK_APM_LEVEL_ON_AC = "254 254";
       DISK_APM_LEVEL_ON_BAT = "1 1";
 
-      SATA_LINKPWR_ON_AC = "med_power_with_dipm";
-      SATA_LINKPWR_ON_BAT = "super_power_saving";
-
       AHCI_RUNTIME_PM_ON_AC = "on";
       AHCI_RUNTIME_PM_ON_BAT = "auto";
 
       # --- USB & Connectivity ---
       USB_AUTOSUSPEND = 1;
-      # USB_EXCLUDE_AUDIO = 1;  # uncomment only if you use external USB audio
+      # USB_EXCLUDE_AUDIO = 1;
+
+      SATA_LINKPWR_ON_BAT = "min_power";
+      SATA_LINKPWR_ON_AC = "med_power_with_dipm";
 
       DEVICES_TO_DISABLE_ON_BAT_NOT_IN_USE = "bluetooth";
 

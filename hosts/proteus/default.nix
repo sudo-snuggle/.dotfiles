@@ -61,7 +61,7 @@
     wrapperFeatures.gtk = true;
   };
 
-  programs.niri.enable = true;
+ # programs.niri.enable = true;
 
   # Configure network proxy if necessary
   # networking.proxy.default = "http://user:password@proxy:port/";
@@ -87,7 +87,12 @@
       intel-vaapi-driver # Sometimes needed as a fallback, especially for browsers.
     ];
   };
-
+  
+ # VM writeback timeout
+  boot.kernel.sysctl = {
+  "vm.dirty_writeback_centisecs" = 1500;
+  "vm.dirty_expire_centisecs" = 3000;
+};
 
   # Configure keymap in X11
   # services.xserver.xkb.layout = "us";

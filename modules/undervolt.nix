@@ -4,13 +4,13 @@
   services.undervolt = {
     enable = true;
     
-    # Start conservative, then tighten incrementally
+    # Snjn jh jh yf
     coreOffset = -90;
     gpuOffset = -40;
     uncoreOffset = -90;
     analogioOffset = 0;
 
-    # Uncomment if your BIOS allows it (often doesn't on T480)
+    # Uncomment if BIOS allows it (often doesn't on mine
     # temp = -5;
   };
 
