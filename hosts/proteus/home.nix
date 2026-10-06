@@ -8,6 +8,7 @@
     ../../home/kitty.nix
     ../../home/i3bar.nix
    # ../../home/stylix.nix
+    #../../home/niri.nix
   ];
 
   home.username = "yasiru";

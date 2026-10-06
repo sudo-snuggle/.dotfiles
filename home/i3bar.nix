@@ -3,94 +3,214 @@
 {
   programs.i3status-rust = {
     enable = true;
+
     bars = {
       top = {
         blocks = [
-          # --- Rightmost items appear first in the list ---
-          # Time with seconds (rightmost)
+
+          # ============================================================
+          # TIME
+          # ============================================================
+
           {
             block = "time";
             interval = 1;
             format = " $timestamp.datetime(f:'%H:%M:%S') ";
           }
 
-          # Date
+          # ============================================================
+          # DATE
+          # ============================================================
+
           {
             block = "time";
             interval = 3600;
             format = " $timestamp.datetime(f:'%Y-%m-%d') ";
           }
 
-          # BAT1 charge level
+          # ============================================================
+          # BATTERY
+          # ============================================================
+
           {
             block = "battery";
             device = "BAT1";
             driver = "sysfs";
+            interval = 10;
             format = " BAT1: $percentage ";
+            charging_format = " BAT1: $percentage ⚡";
+            full_format = " BAT1: $percentage ";
+            missing_format = "";
           }
 
-          # BAT0 charge level
           {
             block = "battery";
             device = "BAT0";
             driver = "sysfs";
+            interval = 10;
             format = " BAT0: $percentage ";
+            charging_format = " BAT0: $percentage ⚡";
+            full_format = " BAT0: $percentage ";
+            missing_format = "";
           }
 
-          # Disk usage
+          # ============================================================
+          # DISK
+          # ============================================================
+
           {
             block = "disk_space";
             path = "/";
             info_type = "available";
             alert_unit = "GB";
-            format = " Disk: $available ";
+            interval = 20;
+            format = " Disk: $available.eng(w:2) ";
           }
 
-          # RAM usage
+          # ============================================================
+          # RAM
+          # ============================================================
+
           {
             block = "memory";
-            format = " RAM: $used_percents ";
+            interval = 5;
+
+            # Current i3status-rust supports this placeholder.
+            # This reports memory used excluding reclaimable cache/buffers.
+            format = " RAM: $mem_used_percents.eng(w:2) ";
+
+            warning_mem = 80;
+            critical_mem = 95;
           }
 
-          # CPU usage
+          # ============================================================
+          # CPU
+          # ============================================================
+
           {
             block = "cpu";
+            interval = 2;
+
             format = " CPU: $utilization ";
+            info_cpu = 50;
+            warning_cpu = 80;
+            critical_cpu = 95;
           }
 
-          # Ethernet - always visible
+          # ============================================================
+          # ETHERNET
+          # ============================================================
+
+          # Match normal Linux Ethernet interface names:
+          # enp0s31f6, eno1, eth0, etc.
           {
             block = "net";
-            device = "enp0s31f6"; # Replace with your actual ethernet interface
+            device = "^en.*";
+            interval = 2;
+
             format = " ETH: $ip ";
             inactive_format = " ETH: Down ";
             missing_format = " ETH: -- ";
           }
 
-          # WLAN - always visible
+          # ============================================================
+          # WIFI
+          # ============================================================
+
+          # Match:
+          # wlan0
+          # wlp2s0
+          # wlp0s20f3
+          # etc.
           {
             block = "net";
-            device = "wlan0"; # Replace with your actual wireless interface
+            device = "^wl.*";
+            interval = 2;
+
             format = " WLAN: $ssid ";
             inactive_format = " WLAN: Down ";
             missing_format = " WLAN: -- ";
           }
 
-          # Power draw (custom block from BAT0 or BAT1)
-          {
-            block = "custom";
-            command = "P0=$(cat /sys/class/power_supply/BAT0/power_now 2>/dev/null); P1=$(cat /sys/class/power_supply/BAT1/power_now 2>/dev/null); if [ \"${P0:-0}\" -gt 0 ]; then echo \"$(echo \"scale=1; $P0 / 1000000\" | bc)W\"; elif [ \"${P1:-0}\" -gt 0 ]; then echo \"$(echo \"scale=1; $P1 / 1000000\" | bc)W\"; else echo \"0W\"; fi";
-            interval = 2;
-            format = " Power: $text ";
-          }
+          # ============================================================
+          # POWER DRAW
+          # ============================================================
 
-          # Fan RPM (leftmost) - reads from thinkpad_acpi
+              {
+          block = "custom";
+          shell = "sh";
+
+          command = ''
+            total=0
+            found=0
+
+            for bat in /sys/class/power_supply/BAT*; do
+              [ -d "$bat" ] || continue
+
+              if [ -r "$bat/power_now" ]; then
+                value=$(cat "$bat/power_now" 2>/dev/null)
+
+                if [ -n "$value" ]; then
+                  total=$((total + value))
+                  found=1
+                  continue
+                fi
+              fi
+
+              if [ -r "$bat/current_now" ] && [ -r "$bat/voltage_now" ]; then
+                current=$(cat "$bat/current_now" 2>/dev/null)
+                voltage=$(cat "$bat/voltage_now" 2>/dev/null)
+
+                if [ -n "$current" ] && [ -n "$voltage" ]; then
+                  value=$(awk \
+                    -v c="$current" \
+                    -v v="$voltage" \
+                    'BEGIN { printf "%.0f", (c * v) / 1000000 }')
+
+                  total=$((total + value))
+                  found=1
+                fi
+              fi
+            done
+
+            if [ "$found" -eq 1 ]; then
+              awk \
+                -v power="$total" \
+                'BEGIN { printf "%.1fW", power / 1000000 }'
+            else
+              printf "N/A"
+            fi
+          '';
+
+          interval = 2;
+          format = " Power: $text ";
+        }
+          # ============================================================
+          # FAN RPM
+          # ============================================================
+
           {
             block = "custom";
-            command = "awk '/^speed:/ {print $2}' /proc/acpi/ibm/fan 2>/dev/null || echo '--'";
+            shell = "sh";
+
+            command = ''
+              if [ -r /proc/acpi/ibm/fan ]; then
+                rpm=$(awk '/^speed:/ {print $2; exit}' /proc/acpi/ibm/fan)
+
+                if [ -n "$rpm" ]; then
+                  printf "%s" "$rpm"
+                else
+                  printf -- "--"
+                fi
+              else
+                printf -- "--"
+              fi
+            '';
+
             interval = 2;
             format = " Fan: $text RPM ";
           }
+
         ];
       };
     };
