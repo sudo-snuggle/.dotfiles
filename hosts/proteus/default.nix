@@ -122,6 +122,7 @@
        btop
        intel-gpu-tools
        stress-ng
+       mpv
      ];
    };
 
