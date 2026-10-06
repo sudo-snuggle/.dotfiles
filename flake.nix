@@ -1,20 +1,24 @@
+
 {
   description = "Nix flakes yay";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+
     stylix.url = "github:nix-community/stylix";
 
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    freesm.url = "github:FreesmTeam/FreesmLauncher";
   };
 
   outputs = { self, nixpkgs, home-manager, ... }@inputs: {
     nixosConfigurations = {
 
-#------------- proteus ------------
+      #------------- proteus ------------
 
       proteus = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
@@ -39,10 +43,16 @@
               users.yasiru = import ./hosts/proteus/home.nix;
             };
           }
+
+          {
+            environment.systemPackages = [
+              inputs.freesm.packages.x86_64-linux.freesmlauncher
+            ];
+          }
         ];
       };
-     
-#----------- hermes ---------------------
+
+      #----------- hermes ---------------------
 
       hermes = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
@@ -70,8 +80,9 @@
         ];
       };
 
-# ------------------------------------------------
+      # ------------------------------------------------
 
     };
   };
 }
+
