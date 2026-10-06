@@ -21,7 +21,7 @@
 
       # Cap max CPU P-state on battery 
        CPU_MAX_PERF_ON_AC = 70;
-      CPU_MAX_PERF_ON_BAT = 30;
+      CPU_MAX_PERF_ON_BAT = 20;
 
       # Turbo Boost: on when plugged in, off on battery
       CPU_BOOST_ON_AC = 1;
