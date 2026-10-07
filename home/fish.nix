@@ -1,5 +1,3 @@
-
-
 { ... }:
 
 {
@@ -8,8 +6,7 @@
 
     interactiveShellInit = ''
       function fish_greeting
-        echo "
-
+        echo '
                         /\
                        /  |
                        \  o
@@ -22,7 +19,7 @@
                \   `-.___.--`  /
           FIH   "-._       _.-"
                     "-._.-"
-
+'
         echo "Welcome to FIH, the friendly interactive hell"
       end
     '';
