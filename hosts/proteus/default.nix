@@ -141,6 +141,7 @@
   # You can use https://search.nixos.org/ to find more packages (and options).
 
   environment.systemPackages = with pkgs; [
+    linuxPackages.cpupower
     git
     tailscale
     powertop
