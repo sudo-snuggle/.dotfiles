@@ -87,14 +87,6 @@
   };
 };
 
-  # Enables VA-API support
-  hardware.graphics = {
-    enable = true;
-    extraPackages = with pkgs; [
-      intel-media-driver 
-      intel-vaapi-driver # Sometimes needed as a fallback, especially for browsers.
-    ];
-  };
   
  # VM writeback timeout
   boot.kernel.sysctl = {
@@ -108,6 +100,15 @@
 
   # Enable CUPS to print documents.
   # services.printing.enable = true;
+
+  # Enables VA-API support
+  hardware.graphics = {
+    enable = true;
+    extraPackages = with pkgs; [
+      intel-media-driver 
+      intel-vaapi-driver # Sometimes needed as a fallback, especially for browsers.
+    ];
+  };
 
   # Enable sound.
   # services.pulseaudio.enable = true;
@@ -146,7 +147,9 @@
     git
     tailscale
     powertop
-    qbittorrent    
+    qbittorrent 
+    bottles 
+    lutris   # Game launcher manager   
    ];
 
     # /etc/nixos/configuration.nix
