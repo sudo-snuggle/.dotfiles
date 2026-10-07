@@ -1,13 +1,20 @@
+
 { config, pkgs, lib, ... }:
 
 {
   wayland.windowManager.sway = {
     enable = true;
+
     wrapperFeatures.gtk = true;
 
     config = {
-      modifier = "Mod1";
+      output = {
+        "eDP-1" = {
+          mode = "1920x1080@47.999Hz";
+        };
+      };
 
+      modifier = "Mod1";
       terminal = "${pkgs.kitty}/bin/kitty";
       menu = "${pkgs.fuzzel}/bin/fuzzel";
 
@@ -17,11 +24,21 @@
           repeat_delay = "300";
           repeat_rate = "50";
         };
+
         "type:touchpad" = {
           tap = "enabled";
           natural_scroll = "enabled";
         };
       };
+
+      # Lock after 2 minutes.
+      # Turn the display off after another 1 minute.
+      # Wake the display when activity resumes.
+      startup = [
+        {
+          command = "swayidle -w timeout 120 'swaylock -f -c 000000' timeout 180 'swaymsg \"output eDP-1 power off\"' resume 'swaymsg \"output eDP-1 power on\"' before-sleep 'swaylock -f -c 000000'";
+        }
+      ];
 
       keybindings = let
         mod = config.wayland.windowManager.sway.config.modifier;
@@ -32,71 +49,66 @@
         "${mod}+f"           = "fullscreen toggle";
         "${mod}+Shift+space" = "floating toggle";
 
-        "${mod}+h"           = "focus left";
-        "${mod}+j"           = "focus down";
-        "${mod}+k"           = "focus up";
-        "${mod}+l"           = "focus right";
+        "${mod}+h" = "focus left";
+        "${mod}+j" = "focus down";
+        "${mod}+k" = "focus up";
+        "${mod}+l" = "focus right";
 
-        "${mod}+Shift+h"     = "move left";
-        "${mod}+Shift+j"     = "move down";
-        "${mod}+Shift+k"     = "move up";
-        "${mod}+Shift+l"     = "move right";
+        "${mod}+Shift+h" = "move left";
+        "${mod}+Shift+j" = "move down";
+        "${mod}+Shift+k" = "move up";
+        "${mod}+Shift+l" = "move right";
 
-        "${mod}+Shift+r"     = "reload";
-        "${mod}+Shift+e"     = "exit";
+        "${mod}+Shift+r" = "reload";
+        "${mod}+Shift+e" = "exit";
 
-        # --- Screenshots (grimshot) ---
-        "Print"              = "exec grimshot savecopy area";
-        "Shift+Print"        = "exec grimshot savecopy screen";
-        "Ctrl+Print"         = "exec grimshot save active";
+        # Screenshots
+        "Print" = "exec grimshot savecopy area";
+        "Shift+Print" = "exec grimshot savecopy screen";
+        "Ctrl+Print" = "exec grimshot save active";
 
-      #
-      # F1  - Mute speakers
-      "XF86AudioMute" = "exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
+        # Audio
+        "XF86AudioMute" = "exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
+        "XF86AudioLowerVolume" = "exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-";
+        "XF86AudioRaiseVolume" = "exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+";
+        "XF86AudioMicMute" = "exec wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle";
 
-      # F2  - Volume down
-      "XF86AudioLowerVolume" = "exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-";
+        # Brightness
+        "XF86MonBrightnessDown" =
+          "exec brightnessctl --device intel_backlight set 5%-";
 
-      # F3  - Volume up
-      "XF86AudioRaiseVolume" = "exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+";
+        "XF86MonBrightnessUp" =
+          "exec brightnessctl --device intel_backlight set 5%+";
 
-      # F4  - Mute/unmute microphone
-      "XF86AudioMicMute" = "exec wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle";
+        # Display/output switch
+        "XF86Display" = "exec wdisplays";
 
-      # F5  - Brightness down
-      "XF86MonBrightnessDown" = "exec brightnessctl --device intel_backlight set 5%-";
+        # Wi-Fi
+        "XF86WLAN" =
+          "exec nmcli radio wifi off && nmcli radio wifi on";
 
-      # F6  - Brightness up
-      "XF86MonBrightnessUp" = "exec brightnessctl --device intel_backlight set 5%+";
+        # F9: Toggle SLT Fiber / Dialog 4G
+        "XF86Tools" =
+          "exec sh -c 'if nmcli -t -f NAME,TYPE connection show --active | grep -q \"^SLT-Fiber-2.4G_e130:802-11-wireless$\"; then nmcli connection down \"SLT-Fiber-2.4G_e130\" && nmcli connection up \"Dialog 4G 454\"; else nmcli connection down \"Dialog 4G 454\" 2>/dev/null; nmcli connection up \"SLT-Fiber-2.4G_e130\"; fi'";
 
-      # F7  - Display/output switch
-      "XF86Display" = "exec wdisplays";
+        # F10
+        "XF86Search" = "exec firefox";
 
-      # F8  - Wireless
-      "XF86WLAN" = "exec nmcli radio wifi off && nmcli radio wifi on";
+        # F11
+        "XF86Launch1" = "exec foot";
 
-      # F9 - Toggle between SLT Fiber and Dialog 4G
-      "XF86Tools" = "exec sh -c 'if nmcli -t -f NAME,TYPE connection show --active | grep -q \"^SLT-Fiber-2.4G_e130:802-11-wireless$\"; then nmcli connection down \"SLT-Fiber-2.4G_e130\" && nmcli connection up \"Dialog 4G 454\"; else nmcli connection down \"Dialog 4G 454\" 2>/dev/null; nmcli connection up \"SLT-Fiber-2.4G_e130\"; fi'";
-
-      # F10 - Search
-      "XF86Search" = "exec swaymsg exec 'firefox'";
-
-      # F11 - Keyboard/application action
-      "XF86Launch1" = "exec swaymsg exec 'foot'";
-
-      # F12 - ThinkPad/Favorites
-      "XF86Launch2" = "exec swaymsg exec 'firefox'";
-    
+        # F12
+        "XF86Launch2" = "exec firefox";
       };
 
-        bars = [
-      {
-        position = "top";
-        # Point directly at the Home Manager-generated config
-        statusCommand = "${pkgs.i3status-rust}/bin/i3status-rs ~/.config/i3status-rust/config-top.toml";
-        # ...
-      }
-    ];
+      bars = [
+        {
+          position = "top";
+          statusCommand =
+            "${pkgs.i3status-rust}/bin/i3status-rs ~/.config/i3status-rust/config-top.toml";
+        }
+      ];
+
       gaps = {
         inner = 6;
         outer = 3;
@@ -112,8 +124,10 @@
   home.packages = with pkgs; [
     i3status
     wl-clipboard
-    sway-contrib.grimshot 
+    sway-contrib.grimshot
     swaybg
-  
+    swayidle
+    swaylock
   ];
 }
+
