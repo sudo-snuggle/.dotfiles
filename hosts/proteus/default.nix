@@ -142,12 +142,11 @@
 
   environment.systemPackages = with pkgs; [
     linuxPackages.cpupower
+    linuxPackages.turbostat
     git
     tailscale
     powertop
-    dmenu 
-    rofi 
-    picom 
+    
    ];
 
   # Some programs need SUID wrappers, can be configured further or are
