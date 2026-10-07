@@ -1,3 +1,5 @@
+
+
 { ... }:
 
 {
@@ -6,10 +8,8 @@
 
     interactiveShellInit = ''
       function fish_greeting
-        echo '
-     
- 
- 
+        echo "
+
                         /\
                        /  |
                        \  o
