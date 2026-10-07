@@ -149,7 +149,8 @@
     powertop
     qbittorrent 
     bottles 
-    lutris   # Game launcher manager   
+    lutris          # Game launcher manager
+    pcmanfm-qt      
    ];
 
     # /etc/nixos/configuration.nix
