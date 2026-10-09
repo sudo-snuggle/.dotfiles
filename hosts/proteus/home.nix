@@ -20,6 +20,7 @@
 
   home.packages = with pkgs; [
     wtype
+    freetube
   ];
 
   programs.home-manager.enable = true;
