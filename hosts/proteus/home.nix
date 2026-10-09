@@ -9,6 +9,7 @@
     ../../home/i3bar.nix
    # ../../home/stylix.nix
     #../../home/niri.nix
+    ../../home/firefox.nix
   ];
 
   home.username = "yasiru";

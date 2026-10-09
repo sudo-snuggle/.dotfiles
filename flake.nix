@@ -1,4 +1,3 @@
-
 {
   description = "Nix flakes yay";
 
@@ -13,6 +12,12 @@
     };
 
     freesm.url = "github:FreesmTeam/FreesmLauncher";
+
+    # Added Betterfox input exclusively for proteus
+    betterfox = {
+      url = "github:yokoffing/Betterfox";
+      flake = false;
+    };
   };
 
   outputs = { self, nixpkgs, home-manager, ... }@inputs: {
@@ -35,6 +40,9 @@
             home-manager = {
               useGlobalPkgs = true;
               useUserPackages = true;
+              
+              # Automatically back up conflicting files (e.g., profiles.ini.backup)
+              backupFileExtension = "backup";
 
               extraSpecialArgs = {
                 inherit inputs;
@@ -85,4 +93,3 @@
     };
   };
 }
-
