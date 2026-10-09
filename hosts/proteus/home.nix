@@ -19,7 +19,7 @@
   home.stateVersion = "26.05";
 
   home.packages = with pkgs; [
-    # add user packages here later
+    wtype
   ];
 
   programs.home-manager.enable = true;
