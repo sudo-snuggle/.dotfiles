@@ -41,7 +41,7 @@
               useGlobalPkgs = true;
               useUserPackages = true;
               
-              # Automatically back up conflicting files (e.g., profiles.ini.backup)
+              # Automatically back up conflicting files
               backupFileExtension = "backup";
 
               extraSpecialArgs = {

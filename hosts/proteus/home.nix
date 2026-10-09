@@ -10,6 +10,8 @@
    # ../../home/stylix.nix
     #../../home/niri.nix
     ../../home/firefox.nix
+    ../../home/mpv.nix
+  
   ];
 
   home.username = "yasiru";
