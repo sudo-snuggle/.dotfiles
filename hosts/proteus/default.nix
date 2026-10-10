@@ -160,6 +160,7 @@
         enable = true;
         remotePlay.openFirewall = true;
         dedicatedServer.openFirewall = true;
+        localNetworkGameTransfers.openFirewall = true; 
         
         # Enable GE-Proton automatically in Steam
         extraCompatPackages = with pkgs; [
