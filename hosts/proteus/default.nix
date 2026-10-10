@@ -145,7 +145,7 @@
     linuxPackages.cpupower
     linuxPackages.turbostat
     git
-    tailscale
+  #  tailscale
     powertop
     qbittorrent 
     bottles 
@@ -187,7 +187,7 @@
   # services.openssh.enable = true;
 
   # Enable Tailscale service
-   services.tailscale.enable = true;
+   #services.tailscale.enable = true;
 
   # Open ports in the firewall.
   # networking.firewall.allowedTCPPorts = [ ... ];
