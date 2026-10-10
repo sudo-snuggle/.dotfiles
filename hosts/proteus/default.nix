@@ -82,7 +82,8 @@
 
  programs.bash = {
   enable = true;
-  shellAliases = {
+  shellAliases = {   font = "Lat2-Terminus16";
+  #
     fih = "fish";
   };
 };
