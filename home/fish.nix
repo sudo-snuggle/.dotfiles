@@ -25,26 +25,48 @@
       end
     '';
 
-    functions = {
-      flakepush-proteus = ''
+   functions = {
+      deploy-proteus = ''
+        set host proteus
+        echo "→ dry-building $host..."
+        if not sudo nixos-rebuild dry-build --flake ~/.dotfiles#$host
+            echo "✗ dry-build failed — nothing committed"
+            return 1
+        end
+
+        echo "→ switching $host..."
+        if not sudo nixos-rebuild switch --flake ~/.dotfiles#$host
+            echo "✗ switch failed — nothing committed"
+            return 1
+        end
+
+        echo "→ committing + pushing..."
         cd ~/.dotfiles
-        git add .
-        sudo nixos-rebuild switch --flake .#proteus
-        and git commit -m "update nixos config"
-        and git push
+        git add -A
+        git commit -m "deploy($host): "(date '+%Y-%m-%d %H:%M')
+        git push
+        echo "✓ $host deployed and pushed"
       '';
 
-      flakepull-hermes = ''
+      deploy-hermes = ''
+        set host hermes
+        echo "→ pulling latest..."
         cd ~/.dotfiles
-        git pull
-        and sudo nixos-rebuild switch --flake .#hermes
-      '';
+        git pull --rebase
 
-      pushnotes = ''
-        cd ~/scratch-notes
-        git add .
-        and git commit -m "update notes"
-        and git push
+        echo "→ dry-building $host..."
+        if not sudo nixos-rebuild dry-build --flake ~/.dotfiles#$host
+            echo "✗ dry-build failed — aborting"
+            return 1
+        end
+
+        echo "→ switching $host..."
+        if not sudo nixos-rebuild switch --flake ~/.dotfiles#$host
+            echo "✗ switch failed"
+            return 1
+        end
+
+        echo "✓ $host deployed"
       '';
     };
   };
