@@ -37,6 +37,16 @@
   networking.networkmanager.enable = true;
   programs.nm-applet.enable = true;
 
+# ---------- shell ----------
+  programs.bash = {
+    enable = true;
+    shellAliases = {
+      fih = "fish";
+    };
+  };
+
+
+
   #------------- external hdd ----------
   #fileSystems."/mnt/storage" = {
   #device = "/dev/disk/by-uuid/a819b421-d355-4c1c-9220-521a3c9f919c";
