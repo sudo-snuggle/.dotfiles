@@ -64,6 +64,7 @@
     vscodium
     xfce.thunar
     xfce.thunar-volman
+    gh
   ];
 
   # ---------- ganymede viewer ----------

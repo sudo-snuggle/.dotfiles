@@ -72,6 +72,7 @@
     bottles
     lutris
     pcmanfm-qt
+    gh
   ];
 
   # ---------- gamemode (proteus only in original) ----------
