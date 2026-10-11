@@ -6,7 +6,6 @@ services.nextcloud = {
   package = pkgs.nextcloud35;
   hostName = "192.168.1.9"; # Replace  IP address
   https = false; # only lan
-  autoUpdateApps = true;
   extraAppsEnable = true;
   
   config = {
