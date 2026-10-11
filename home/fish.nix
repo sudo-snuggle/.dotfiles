@@ -68,6 +68,23 @@
 
         echo "✓ $host deployed"
       '';
+
+          push-proteus = ''
+        set host proteus
+        echo "→ pushing config for $host..."
+        cd ~/.dotfiles
+
+        git add -A
+        git commit -m "update($host): "(date '+%Y-%m-%d %H:%M')
+        or return 1
+
+        git push
+        or return 1
+
+        echo "✓ $host config pushed"
+      '';
+
+
     };
   };
 }

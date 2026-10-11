@@ -23,6 +23,7 @@
     ../../modules/desktop/steam.nix
     ../../modules/boot/grub-default.nix
     ../../modules/server/lid-off.nix
+    ../../modules/server/immich.nix
   ];
 
   # ---------- boot ----------
