@@ -3,17 +3,17 @@
 { config, lib, pkgs, inputs, ... }:
 
 {
-  imports = [
+    imports = [
     ./hardware-configuration.nix
     ../../modules/core/nix-settings.nix
     ../../modules/core/locale.nix
     ../../modules/desktop/sway.nix
-    ../../modules/desktop/steam.nix
     ../../modules/desktop/graphics.nix
     ../../modules/laptop/tlp.nix
     ../../modules/laptop/thinkfan.nix
     ../../modules/laptop/undervolt.nix
     ../../modules/boot/grub-opencore.nix
+    ../../modules/desktop/steam.nix
   ];
 
   # ---------- boot ----------

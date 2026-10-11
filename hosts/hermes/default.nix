@@ -11,19 +11,18 @@
 #in
 
 {
-   imports = [
+     imports = [
     ./hardware-configuration.nix
     ../../modules/core/nix-settings.nix
-    ../../modules/core/users.nix
+    ../../modules/users/yasiru.nix
     ../../modules/core/locale.nix
     ../../modules/server/cockpit.nix
     ../../modules/server/samba.nix
     ../../modules/server/firewall.nix
     ../../modules/server/ssh.nix
-    ../../modules/server/media.nix
     ../../modules/desktop/steam.nix
     ../../modules/boot/grub-default.nix
-    ../../modules/host/lid-off.nix
+    ../../modules/server/lid-off.nix
   ];
 
   # ---------- boot ----------
