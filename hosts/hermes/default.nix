@@ -24,7 +24,7 @@
     ../../modules/boot/grub-default.nix
     ../../modules/server/lid-off.nix
     ../../modules/server/immich.nix
-    ../../modules/server/nextcloud.nix
+    ../../modules/server/navidrome.nix
   ];
 
   # ---------- boot ----------
