@@ -25,6 +25,9 @@
     ../../modules/server/lid-off.nix
     ../../modules/server/immich.nix
     ../../modules/server/navidrome.nix
+    ../../modules/server/couchdb.nix
+    
+
   ];
 
   # ---------- boot ----------
