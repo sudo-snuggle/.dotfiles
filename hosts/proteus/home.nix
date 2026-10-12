@@ -21,6 +21,7 @@
   home.packages = with pkgs; [
     wtype
     freetube
+    obsidian
   ];
 
   programs.home-manager.enable = true;
