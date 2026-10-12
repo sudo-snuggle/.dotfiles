@@ -26,7 +26,7 @@
     ../../modules/server/immich.nix
     ../../modules/server/navidrome.nix
     ../../modules/server/couchdb.nix
-    
+    ../../modules/server/nextcloud.nix
 
   ];
 
