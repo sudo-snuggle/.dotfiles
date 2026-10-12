@@ -4,7 +4,7 @@
   services.nextcloud = {
     enable = true;
     # Use standard stable package (or pkgs.nextcloud30 / pkgs.nextcloud31 depending on channel)
-    package = pkgs.nextcloud; 
+   # package = pkgs.nextcloud; 
     hostName = "192.168.1.9";
     https = false; # LAN only
 
