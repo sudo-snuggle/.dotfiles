@@ -104,6 +104,9 @@
   # ---------- tailscale ----------
   #services.tailscale.enable = true;
 
+  virtualisation.docker.enable = true;
+
+
   # ---------- ganymede (scripts land later) ----------
   # we add the service + timer once the scripts exist
 
