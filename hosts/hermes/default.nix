@@ -108,6 +108,13 @@
   virtualisation.docker.enable = true;
 
 
+swapDevices = [
+  {
+    device = "/var/lib/swapfile";
+    size = 4096;
+  }
+];
+
   # ---------- ganymede (scripts land later) ----------
   # we add the service + timer once the scripts exist
 
