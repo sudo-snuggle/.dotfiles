@@ -14,6 +14,7 @@
     ../../modules/laptop/undervolt.nix
     ../../modules/boot/grub-opencore.nix
     ../../modules/desktop/steam.nix
+    ../../modules/server/ai.nix
   ];
 
   # ---------- boot ----------
