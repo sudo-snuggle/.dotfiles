@@ -27,26 +27,29 @@
 
    functions = {
       deploy-proteus = ''
-        set host proteus
-        echo "→ dry-building $host..."
-        if not sudo nixos-rebuild dry-build --flake ~/.dotfiles#$host
-            echo "✗ dry-build failed — nothing committed"
-            return 1
-        end
+      set host proteus
+      echo "→ staging untracked files..."
+      git -C ~/.dotfiles add -N .
 
-        echo "→ switching $host..."
-        if not sudo nixos-rebuild switch --flake ~/.dotfiles#$host
-            echo "✗ switch failed — nothing committed"
-            return 1
-        end
+      echo "→ dry-building $host..."
+      if not sudo nixos-rebuild dry-build --flake ~/.dotfiles#$host
+          echo "✗ dry-build failed — nothing committed"
+          return 1
+      end
 
-        echo "→ committing + pushing..."
-        cd ~/.dotfiles
-        git add -A
-        git commit -m "deploy($host): "(date '+%Y-%m-%d %H:%M')
-        git push
-        echo "✓ $host deployed and pushed"
-      '';
+      echo "→ switching $host..."
+      if not sudo nixos-rebuild switch --flake ~/.dotfiles#$host
+          echo "✗ switch failed — nothing committed"
+          return 1
+      end
+
+      echo "→ committing + pushing..."
+      cd ~/.dotfiles
+      git add -A
+      git commit -m "deploy($host): "(date '+%Y-%m-%d %H:%M')
+      git push
+      echo "✓ $host deployed and pushed"
+    '';
 
       deploy-hermes = ''
         set host hermes

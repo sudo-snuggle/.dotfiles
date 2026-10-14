@@ -15,6 +15,7 @@
     ../../modules/boot/grub-opencore.nix
     ../../modules/desktop/steam.nix
     ../../modules/server/ai.nix
+    ../../modules/desktop/appimage.nix
   ];
 
   # ---------- boot ----------
