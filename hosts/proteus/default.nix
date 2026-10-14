@@ -83,6 +83,8 @@
   # ---------- gamemode (proteus only in original) ----------
   programs.gamemode.enable = true;
 
+  networking.firewall.allowedTCPPorts = [ 7070];
+
   # ---------- tailscale ----------
   #services.tailscale.enable = true;
 
