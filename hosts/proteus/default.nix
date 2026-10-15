@@ -37,6 +37,9 @@
       intel-gpu-tools
       stress-ng
       brave-origin
+      
+      librewolf
+
     ];
   };
 
