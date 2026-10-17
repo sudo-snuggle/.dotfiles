@@ -16,6 +16,8 @@
     ../../modules/desktop/steam.nix
     ../../modules/server/ai.nix
     ../../modules/desktop/appimage.nix
+    ../../modules/desktop/virt.nix
+    #../../modules/desktop/polkit.nix
   ];
 
   # ---------- boot ----------
@@ -29,7 +31,7 @@
   users.users.yasiru = {
     isNormalUser = true;
     description = "yasiru";
-    extraGroups = [ "networkmanager" "wheel" ];
+    extraGroups = [ "networkmanager" "wheel" "libvirtd" ];
     packages = with pkgs; [
       tree
       vscodium

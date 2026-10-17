@@ -26,53 +26,81 @@
     '';
 
    functions = {
-      deploy-proteus = ''
-      set host proteus
-      echo "→ staging untracked files..."
-      git -C ~/.dotfiles add -N .
+    deploy-proteus = ''
+        set host proteus
+        set target_dir ~/.dotfiles/hosts/$host
 
-      echo "→ dry-building $host..."
-      if not sudo nixos-rebuild dry-build --flake ~/.dotfiles#$host
-          echo "✗ dry-build failed — nothing committed"
-          return 1
-      end
+        echo "→ copying hardware-configuration.nix..."
+        if test -f /etc/nixos/hardware-configuration.nix
+            cp /etc/nixos/hardware-configuration.nix $target_dir/hardware-configuration.nix
+        else
+            echo "⚠ warning: /etc/nixos/hardware-configuration.nix not found in /etc/nixos/"
+        end
 
-      echo "→ switching $host..."
-      if not sudo nixos-rebuild switch --flake ~/.dotfiles#$host
-          echo "✗ switch failed — nothing committed"
-          return 1
-      end
-
-      echo "→ committing + pushing..."
-      cd ~/.dotfiles
-      git add -A
-      git commit -m "deploy($host): "(date '+%Y-%m-%d %H:%M')
-      git push
-      echo "✓ $host deployed and pushed"
-    '';
-
-      deploy-hermes = ''
-        set host hermes
-        echo "→ pulling latest..."
-        cd ~/.dotfiles
-        git pull --rebase
+        echo "→ staging untracked files..."
+        git -C ~/.dotfiles add -N .
 
         echo "→ dry-building $host..."
         if not sudo nixos-rebuild dry-build --flake ~/.dotfiles#$host
-            echo "✗ dry-build failed — aborting"
+            echo "✗ dry-build failed — cleaning up and aborting"
+            rm -f $target_dir/hardware-configuration.nix
             return 1
         end
 
         echo "→ switching $host..."
         if not sudo nixos-rebuild switch --flake ~/.dotfiles#$host
-            echo "✗ switch failed"
+            echo "✗ switch failed — cleaning up and aborting"
+            rm -f $target_dir/hardware-configuration.nix
             return 1
         end
 
-        echo "✓ $host deployed"
-      '';
+        echo "→ cleaning up local hardware-configuration.nix..."
+        rm -f $target_dir/hardware-configuration.nix
 
-          push-proteus = ''
+        echo "→ committing + pushing..."
+        cd ~/.dotfiles
+        git add -A
+        git commit -m "deploy($host): "(date '+%Y-%m-%d %H:%M')
+        git push
+        echo "✓ $host deployed and pushed"
+    '';
+
+    deploy-hermes = ''
+        set host hermes
+        set target_dir ~/.dotfiles/hosts/$host
+        cd ~/.dotfiles
+
+        echo "→ pulling latest..."
+        git pull --rebase
+
+        echo "→ copying hardware-configuration.nix..."
+        if test -f /etc/nixos/hardware-configuration.nix
+            cp /etc/nixos/hardware-configuration.nix $target_dir/hardware-configuration.nix
+        else
+            echo "⚠ warning: /etc/nixos/hardware-configuration.nix not found in /etc/nixos/"
+        end
+
+        echo "→ dry-building $host..."
+        if not sudo nixos-rebuild dry-build --flake ~/.dotfiles#$host
+            echo "✗ dry-build failed — cleaning up and aborting"
+            rm -f $target_dir/hardware-configuration.nix
+            return 1
+        end
+
+        echo "→ switching $host..."
+        if not sudo nixos-rebuild switch --flake ~/.dotfiles#$host
+            echo "✗ switch failed — cleaning up and aborting"
+            rm -f $target_dir/hardware-configuration.nix
+            return 1
+        end
+
+        echo "→ cleaning up local hardware-configuration.nix..."
+        rm -f $target_dir/hardware-configuration.nix
+
+        echo "✓ $host deployed"
+    '';
+
+    push-proteus = ''
         set host proteus
         echo "→ pushing config for $host..."
         cd ~/.dotfiles
@@ -85,7 +113,7 @@
         or return 1
 
         echo "✓ $host config pushed"
-      '';
+    '';
 
 
     };
