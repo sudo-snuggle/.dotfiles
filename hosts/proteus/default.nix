@@ -7,7 +7,7 @@
     ./hardware-configuration.nix
     ../../modules/core/nix-settings.nix
     ../../modules/core/locale.nix
-    ../../modules/desktop/sway.nix
+    ../../modules/desktop/wm.nix
     ../../modules/desktop/graphics.nix
     ../../modules/laptop/tlp.nix
     ../../modules/laptop/thinkfan.nix
@@ -45,17 +45,6 @@
     ];
   };
 
-  # ---------- display manager ----------
-
-  services.displayManager.ly.enable = true;
-  services.desktopManager.cosmic.enable = true;
-  #services.displayManager.cosmic-greeter.enable = true;
-
-  services.xserver = {
-    enable = true;
-    windowManager.i3.enable = false;
-    windowManager.dwm.enable = false;
-  };
 
   # ---------- shell ----------
   programs.bash = {

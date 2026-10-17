@@ -3,15 +3,18 @@
 
 {
   imports = [
+    # Existing modules
     ../../home/fish.nix
     ../../home/sway.nix
     ../../home/kitty.nix
     ../../home/i3bar.nix
-   # ../../home/stylix.nix
-    #../../home/niri.nix
+    # ../../home/stylix.nix
+    # ../../home/niri.nix
     ../../home/firefox.nix
     ../../home/mpv.nix
-  
+    ../../home/inir.nix
+    ../../home/caelestia.nix
+    ../../home/hyprland.nix
   ];
 
   home.username = "yasiru";

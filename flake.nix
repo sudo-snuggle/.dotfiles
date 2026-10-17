@@ -1,3 +1,4 @@
+
 {
   description = "Nix flakes yay";
 
@@ -13,17 +14,29 @@
 
     freesm.url = "github:FreesmTeam/FreesmLauncher";
 
-    # Added Betterfox input exclusively for proteus
+    # Betterfox
     betterfox = {
       url = "github:yokoffing/Betterfox";
       flake = false;
+    };
+
+    # iNiR shell for Niri
+    inir = {
+      url = "github:snowarch/inir";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    # Caelestia shell for Hyprland
+    caelestia-shell = {
+      url = "github:caelestia-dots/shell";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
   outputs = { self, nixpkgs, home-manager, ... }@inputs: {
     nixosConfigurations = {
 
-      #------------- proteus ------------
+      # =============== PROTEUS ===============
 
       proteus = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
@@ -32,16 +45,16 @@
           inherit inputs;
         };
 
+       
         modules = [
           ./hosts/proteus
+
           home-manager.nixosModules.home-manager
 
           {
             home-manager = {
               useGlobalPkgs = true;
               useUserPackages = true;
-              
-              # Automatically back up conflicting files
               backupFileExtension = "backup";
 
               extraSpecialArgs = {
@@ -58,9 +71,10 @@
             ];
           }
         ];
+
       };
 
-      #----------- hermes ---------------------
+      # =============== HERMES ===============
 
       hermes = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
@@ -87,9 +101,6 @@
           }
         ];
       };
-
-      # ------------------------------------------------
-
     };
   };
 }
