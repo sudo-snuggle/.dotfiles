@@ -29,6 +29,11 @@
     obsidian
     alacritty
     fuzzel
+
+    gnome-tweaks           # Modify themes, fonts, cursor, window buttons, & startup apps
+    gnome-extension-manager # Browse, search, install, and update extensions directly via GUI
+    dconf-editor           # Detailed registry editing for hidden GNOME & GTK settings
+
   ];
 
   programs.home-manager.enable = true;
