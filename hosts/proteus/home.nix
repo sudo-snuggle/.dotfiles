@@ -11,9 +11,9 @@
     #../../home/niri.nix
     ../../home/firefox.nix
     ../../home/mpv.nix
-    ../../home/inir.nix
-    ../../home/caelestia.nix
-    ../../home/hyprland.nix
+    #../../home/inir.nix
+    #../../home/caelestia.nix
+    #../../home/hyprland.nix
   ];
 
   home.username = "yasiru";
