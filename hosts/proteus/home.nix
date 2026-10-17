@@ -9,7 +9,7 @@
     ../../home/kitty.nix
     ../../home/i3bar.nix
     # ../../home/stylix.nix
-    # ../../home/niri.nix
+    #../../home/niri.nix
     ../../home/firefox.nix
     ../../home/mpv.nix
     ../../home/inir.nix
@@ -25,6 +25,8 @@
     wtype
     freetube
     obsidian
+    alacritty
+    fuzzel
   ];
 
   programs.home-manager.enable = true;

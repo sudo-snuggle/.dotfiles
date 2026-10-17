@@ -6,9 +6,8 @@
     enable = true;
 
     settings = {
-      exec-once = [
-        "caelestia shell -d"
-      ];
+
+      
     };
   };
 }
