@@ -3,7 +3,7 @@
 
 {
   # Display manager
-  services.displayManager.sddm.enable = true;
+  
 
   services.displayManager.defaultSession = lib.mkForce "sway";
 
@@ -16,6 +16,9 @@
     enable = true;
     windowManager.i3.enable = true;
     windowManager.dwm.enable = true;
+
+displayManager.lightdm.enable = true;
+
   };
 
   # Sway 

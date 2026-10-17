@@ -1,4 +1,3 @@
-
 { config, pkgs, inputs, ... }:
 
 {
@@ -20,6 +19,9 @@
   home.username = "yasiru";
   home.homeDirectory = "/home/yasiru";
   home.stateVersion = "26.05";
+
+  # Permanent fix: automatically backup clobbered files instead of throwing exit code 1
+  home.backupFileExtension = "hm-backup";
 
   home.packages = with pkgs; [
     wtype
