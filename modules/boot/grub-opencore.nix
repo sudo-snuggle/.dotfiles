@@ -10,12 +10,12 @@
     useOSProber = true;
 
     extraEntries = ''
-      menuentry "OpenCore" {
+      menuentry "Macos" {
         insmod part_gpt
         insmod fat
-        insmod search_fs_uuid
+        insmod search
         insmod chain
-        search --fs-uuid --no-floppy --set=root 0CC4-CC35
+        search --no-floppy --file --set=root /EFI/OC/OpenCore.efi
         chainloader /EFI/OC/OpenCore.efi
       }
     '';
