@@ -1,17 +1,21 @@
 { config, pkgs, ... }:
 
 {
-virtualisation.libvirtd = {
-  enable = true;
-  qemu = {
-    package = pkgs.qemu_kvm;
-    runAsRoot = true;
-    # Ensures QEMU has access to host OpenGL / VirGL backend
-    swtpm.enable = true;
+  # Enable Libvirtd
+  virtualisation.libvirtd = {
+    enable = true;
+    qemu = {
+      package = pkgs.qemu_kvm;
+      swtpm.enable = true;
+    };
   };
-};
 
-# Make sure hardware graphics permissions are open for virtualization groups
-hardware.opengl.enable = true;
-users.users.yasiru.extraGroups = [  "video" "render" ];
+  # Enable Virt-Manager GUI
+  programs.virt-manager.enable = true;
+
+  # Enable Hardware Acceleration / Graphics
+  hardware.graphics.enable = true;
+
+  # Add user to required groups for VM management and graphics access
+  users.users.yasiru.extraGroups = [ "libvirtd" "video" "render" ];
 }
