@@ -18,6 +18,7 @@
     ../../modules/desktop/appimage.nix
     ../../modules/desktop/virt.nix
     #../../modules/desktop/polkit.nix
+    ../../modules/laptop/syncthing.nix
   ];
 
   # ---------- boot ----------
