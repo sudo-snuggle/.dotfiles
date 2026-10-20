@@ -43,10 +43,16 @@
       brave-origin
       
       librewolf
-
+      sunshine
     ];
   };
 
+
+services.sunshine = {
+  enable = true;
+  autoStart = true;
+  capSysAdmin = true; # Needed for input/display capture permissions on Linux
+};
 
   # ---------- shell ----------
   programs.bash = {
@@ -79,7 +85,7 @@
   # ---------- gamemode (proteus only in original) ----------
   programs.gamemode.enable = true;
 
-  networking.firewall.allowedTCPPorts = [ 7070];
+  networking.firewall.allowedTCPPorts = [ 7070 47990];
 
   # ---------- tailscale ----------
   #services.tailscale.enable = true;
