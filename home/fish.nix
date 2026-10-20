@@ -70,14 +70,25 @@
         set target_dir ~/.dotfiles/hosts/$host
         cd ~/.dotfiles
 
-        echo "→ pulling latest..."
-        git pull --rebase
+        echo "→ fetching latest from Git..."
+        if not git fetch origin
+            echo "✗ git fetch failed — aborting"
+            return 1
+        end
+
+        echo "→ forcing local repo to match origin/main..."
+        if not git reset --hard origin/main
+            echo "✗ git reset failed — aborting"
+            return 1
+        end
+
+        git clean -fd
 
         echo "→ copying hardware-configuration.nix..."
         if test -f /etc/nixos/hardware-configuration.nix
             cp /etc/nixos/hardware-configuration.nix $target_dir/hardware-configuration.nix
         else
-            echo "⚠ warning: /etc/nixos/hardware-configuration.nix not found in /etc/nixos/"
+            echo "⚠ warning: hardware-configuration.nix not found"
         end
 
         echo "→ dry-building $host..."
@@ -100,6 +111,7 @@
         echo "✓ $host deployed"
     '';
 
+    
     push-proteus = ''
         set host proteus
         echo "→ pushing config for $host..."
