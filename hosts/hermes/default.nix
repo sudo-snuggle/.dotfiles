@@ -73,6 +73,9 @@
     yt-dlp
     aria2
     ffmpeg
+    cage
+  moonlight-client
+
   ];
 
   # ---------- swap setup ----------
