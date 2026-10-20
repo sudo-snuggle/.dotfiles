@@ -19,6 +19,7 @@
     ../../modules/desktop/virt.nix
     #../../modules/desktop/polkit.nix
     ../../modules/laptop/syncthing.nix
+    ../../modules/laptop/fonts.nix
   ];
 
   # ---------- boot ----------
