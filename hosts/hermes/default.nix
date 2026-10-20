@@ -78,6 +78,16 @@
 
   ];
 
+  hardware.graphics = {
+  enable = true;
+  enable32Bit = true;
+  extraPackages = with pkgs; [
+    intel-media-driver # For Broadwell (5th gen) and newer
+    intel-vaapi-driver # For Haswell (4th gen HD 4400) / older Intel GPUs
+    libvdpau-va-gl
+  ];
+};
+
   # ---------- swap setup ----------
   swapDevices = [
     {
