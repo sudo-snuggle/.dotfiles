@@ -66,39 +66,44 @@
     '';
 
     deploy-hermes = ''
-        set host hermes
-        set target_dir ~/.dotfiles/hosts/$host
-        cd ~/.dotfiles
+    set host hermes
+    set target_dir ~/.dotfiles/hosts/$host
+    cd ~/.dotfiles
 
-        echo "→ pulling latest..."
-        git pull --rebase
+    echo "→ pulling latest..."
+    git pull --rebase
 
-        echo "→ copying hardware-configuration.nix..."
-        if test -f /etc/nixos/hardware-configuration.nix
-            cp /etc/nixos/hardware-configuration.nix $target_dir/hardware-configuration.nix
-        else
-            echo "⚠ warning: /etc/nixos/hardware-configuration.nix not found in /etc/nixos/"
-        end
+    echo "→ copying hardware-configuration.nix..."
+    if test -f /etc/nixos/hardware-configuration.nix
+        cp /etc/nixos/hardware-configuration.nix $target_dir/hardware-configuration.nix
+        git add -N $target_dir/hardware-configuration.nix
+    else
+        echo "⚠ warning: /etc/nixos/hardware-configuration.nix not found in /etc/nixos/"
+    end
 
-        echo "→ dry-building $host..."
-        if not sudo nixos-rebuild dry-build --flake ~/.dotfiles#$host
-            echo "✗ dry-build failed — cleaning up and aborting"
-            rm -f $target_dir/hardware-configuration.nix
-            return 1
-        end
-
-        echo "→ switching $host..."
-        if not sudo nixos-rebuild switch --flake ~/.dotfiles#$host
-            echo "✗ switch failed — cleaning up and aborting"
-            rm -f $target_dir/hardware-configuration.nix
-            return 1
-        end
-
-        echo "→ cleaning up local hardware-configuration.nix..."
+    echo "→ dry-building $host..."
+    if not sudo nixos-rebuild dry-build --flake ~/.dotfiles#$host
+        echo "✗ dry-build failed — cleaning up and aborting"
+        git restore --staged $target_dir/hardware-configuration.nix 2>/dev/null
         rm -f $target_dir/hardware-configuration.nix
+        return 1
+    end
 
-        echo "✓ $host deployed"
-    '';
+    echo "→ switching $host..."
+    if not sudo nixos-rebuild switch --flake ~/.dotfiles#$host
+        echo "✗ switch failed — cleaning up and aborting"
+        git restore --staged $target_dir/hardware-configuration.nix 2>/dev/null
+        rm -f $target_dir/hardware-configuration.nix
+        return 1
+    end
+
+    echo "→ cleaning up local hardware-configuration.nix..."
+    git restore --staged $target_dir/hardware-configuration.nix 2>/dev/null
+    rm -f $target_dir/hardware-configuration.nix
+
+    echo "✓ $host deployed"
+'';
+
 
     push-proteus = ''
         set host proteus
