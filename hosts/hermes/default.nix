@@ -74,7 +74,7 @@
     aria2
     ffmpeg
     cage
-  moonlight-client
+  moonlight-qt
 
   ];
 
