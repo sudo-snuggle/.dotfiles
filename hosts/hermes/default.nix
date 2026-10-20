@@ -75,6 +75,11 @@
     ffmpeg
     cage
   moonlight-qt
+   
+# Kodi with Jellyfin plugin pre-packaged
+  (kodi.passthru.withPackages (kodiPkgs: with kodiPkgs; [
+    jellyfin
+  ]))
 
   ];
 
