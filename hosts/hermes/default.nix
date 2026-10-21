@@ -111,6 +111,7 @@ services.displayManager.ly.enable = true;
     ];
   };
 }
+#kksdd 
 
   # ---------- swap setup ----------
   swapDevices = [
