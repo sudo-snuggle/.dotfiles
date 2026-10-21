@@ -94,8 +94,14 @@ boot.kernelModules = [ "vkms" ];
   # ---------- gamemode (proteus only in original) ----------
   programs.gamemode.enable = true;
 
-  networking.firewall.allowedTCPPorts = [ 7070 47990];
-
+networking.firewall = {
+    enable = true;
+    allowedTCPPorts = [ 7070 47984 47989 47990 48010 ];
+    allowedUDPPortRanges = [
+      { from = 47998; to = 48000; }
+      { from = 48002; to = 48010; }
+    ];
+  };
   # ---------- tailscale ----------
   #services.tailscale.enable = true;
 
