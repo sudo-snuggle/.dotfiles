@@ -51,6 +51,7 @@
     };
   };
 
+services.displayManager.ly.enable = true;
   services.desktopManager.plasma6.enable = true;
 
   # ---------- essential server packages ----------
