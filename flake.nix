@@ -1,4 +1,3 @@
-
 {
   description = "Nix flakes yay";
 
@@ -11,6 +10,9 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # NUR (Nix User Repository) for Firefox extensions
+    nur.url = "github:nix-community/NUR";
 
     freesm.url = "github:FreesmTeam/FreesmLauncher";
 
@@ -33,7 +35,7 @@
     };
   };
 
-  outputs = { self, nixpkgs, home-manager, ... }@inputs: {
+  outputs = { self, nixpkgs, home-manager, nur, ... }@inputs: {
     nixosConfigurations = {
 
       # =============== PROTEUS ===============
@@ -45,9 +47,11 @@
           inherit inputs;
         };
 
-       
         modules = [
           ./hosts/proteus
+
+          # Add NUR overlay module so pkgs.nur is available in NixOS & Home Manager
+          nur.modules.nixos.default
 
           home-manager.nixosModules.home-manager
 
