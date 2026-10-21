@@ -51,8 +51,7 @@
     };
   };
 
-  # Make sure your user (`yasiru`) is in the "docker" group inside 
-  # ../../modules/users/yasiru.nix so you don't need `sudo` for `docker` commands!
+  services.desktopManager.plasma6.enable = true;
 
   # ---------- essential server packages ----------
   environment.systemPackages = with pkgs; [
@@ -78,6 +77,7 @@
   libcec
 
   jellyfin-media-player
+  kdePackages.plasma-bigscreen
    
 # Kodi with Jellyfin plugin pre-packaged
   (kodi.passthru.withPackages (kodiPkgs: with kodiPkgs; [
