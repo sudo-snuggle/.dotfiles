@@ -103,7 +103,7 @@ services.displayManager.ly.enable = true;
 
   # 2. Declare the OpenWrt container
   virtualisation.oci-containers.containers.openwrt = {
-    image = "openwrt/openwrt:latest";
+    image = "docker.io/openwrt/openwrt:latest";
     autoStart = true;
     extraOptions = [
       "--privileged"
