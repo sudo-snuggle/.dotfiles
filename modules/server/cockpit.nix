@@ -12,5 +12,7 @@
       };
     };
   };
+
+  virtualisation.libvirtd.enable = true;
   security.pam.services.cockpit = {};
 }
