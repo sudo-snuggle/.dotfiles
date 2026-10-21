@@ -80,7 +80,13 @@ services.sunshine = {
     lutris
     pcmanfm-qt
     gh
+
+      wlr-randr
   ];
+
+  # Enable the Virtual KMS display driver
+boot.kernelModules = [ "vkms" ];
+
 
   # ---------- gamemode (proteus only in original) ----------
   programs.gamemode.enable = true;
