@@ -12,7 +12,7 @@
     ../../modules/server/cockpit.nix
     #../../modules/server/samba.nix
     ../../modules/server/firewall.nix
-    #../../modules/server/ssh.nix
+    ../../modules/server/ssh.nix
     ../../modules/boot/grub-default.nix
     ../../modules/server/lid-off.nix
     #../../modules/server/immich.nix

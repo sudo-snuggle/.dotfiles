@@ -2,7 +2,9 @@
 
 {
   services.openssh = {
-    enable = true;
-    settings.PermitRootLogin = "no";
+  enable = true;
+  settings = {
+    PasswordAuthentication = true; # Set to true initially so we can send our SSH key over
   };
-}
+};
+  };
