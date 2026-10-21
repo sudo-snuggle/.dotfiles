@@ -98,6 +98,20 @@ services.displayManager.ly.enable = true;
   ];
 };
 
+# 1. Ensure the host kernel allows routing/forwarding
+  boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
+
+  # 2. Declare the OpenWrt container
+  virtualisation.oci-containers.containers.openwrt = {
+    image = "openwrt/openwrt:latest";
+    autoStart = true;
+    extraOptions = [
+      "--privileged"
+      "--network=host" # Gives OpenWrt direct visibility into host network interfaces
+    ];
+  };
+}
+
   # ---------- swap setup ----------
   swapDevices = [
     {
