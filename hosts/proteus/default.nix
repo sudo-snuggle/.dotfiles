@@ -82,6 +82,9 @@ services.sunshine = {
     gh
 
       wlr-randr
+      nwg-displays
+  kanshi
+  wlr-randr
   ];
 
   # Enable the Virtual KMS display driver

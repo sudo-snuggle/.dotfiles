@@ -1,4 +1,3 @@
-
 { config, pkgs, lib, ... }:
 
 {
@@ -12,7 +11,6 @@
         "eDP-1" = {
           mode = "1920x1080@47.999Hz";
           scale = "1.0";
-
         };
       };
 
@@ -39,6 +37,14 @@
       startup = [
         {
           command = "swayidle -w timeout 120 'swaylock -f -c 000000' timeout 180 'swaymsg \"output eDP-1 power off\"' resume 'swaymsg \"output eDP-1 power on\"' before-sleep 'swaylock -f -c 000000'";
+        }
+      ];
+
+      # Force nwg-displays into a centered, floating overlay window
+      window.commands = [
+        {
+          command = "floating enable, resize set 960 640, move position center";
+          criteria = { app_id = "nwg-displays"; };
         }
       ];
 
@@ -82,14 +88,14 @@
         "XF86MonBrightnessUp" =
           "exec brightnessctl --device intel_backlight set 5%+";
 
-        # Display/output switch
-        "XF86Display" = "exec wdisplays";
+        # Display / Output Switch Overlay (F7 / XF86Display)
+        "F7" = "exec nwg-displays";
+        "XF86Display" = "exec nwg-displays";
 
         # Wi-Fi
         "XF86WLAN" =
           "exec nmcli radio wifi off && nmcli radio wifi on";
 
-        
         # F10
         "XF86Search" = "exec firefox";
 
@@ -102,11 +108,10 @@
         #---------------my custom keybinds --------------------------------
 
         "Ctrl+y" = "exec bash -c 'wtype -M ctrl l -m ctrl && wtype -M ctrl c -m ctrl && sleep 0.2 && mpv \"$(wl-paste)\"'";
-          
-          # F9: Toggle SLT Fiber / Dialog 4G
+
+        # F9: Toggle SLT Fiber / Dialog 4G
         "XF86Tools" =
           "exec sh -c 'if nmcli -t -f NAME,TYPE connection show --active | grep -q \"^SLT-Fiber-2.4G_e130:802-11-wireless$\"; then nmcli connection down \"SLT-Fiber-2.4G_e130\" && nmcli connection up \"Dialog 4G 454\"; else nmcli connection down \"Dialog 4G 454\" 2>/dev/null; nmcli connection up \"SLT-Fiber-2.4G_e130\"; fi'";
-
       };
 
       bars = [
@@ -136,6 +141,6 @@
     swaybg
     swayidle
     swaylock
+   
   ];
 }
-
