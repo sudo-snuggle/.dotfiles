@@ -110,7 +110,7 @@ services.displayManager.ly.enable = true;
       "--network=host" # Gives OpenWrt direct visibility into host network interfaces
     ];
   };
-}
+
 #kksdd 
 
   # ---------- swap setup ----------
