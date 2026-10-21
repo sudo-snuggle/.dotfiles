@@ -103,7 +103,7 @@ services.displayManager.ly.enable = true;
 
   # 2. Declare the OpenWrt container
   virtualisation.oci-containers.containers.openwrt = {
-    image = "docker.io/suling/openwrt:latest";
+    image = "quay.io/openwrt/rootfs:latest";
     autoStart = true;
     extraOptions = [
       "--privileged"
