@@ -75,7 +75,7 @@
     ffmpeg
     cage
   moonlight-qt
-  cec-utils
+  libcec
 
   jellyfin-media-player
    
