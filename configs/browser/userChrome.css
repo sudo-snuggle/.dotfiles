@@ -1,0 +1,32 @@
+
+#TabsToolbar { display: none !important; }
+#sidebar-panel-header { display: none !important; }
+#sidebar-box { padding-inline-start: 0px !important; }
+
+* { border-radius: 0px !important; }
+
+
+/* Hide navbar when not hovered or focused */
+#nav-bar {
+  margin-top: -38px !important; /* Slide up out of view */
+  transition: margin-top 0.15s ease-in-out !important;
+  opacity: 0 !important;
+  z-index: 1000 !important;
+  position: relative !important;
+  background-color: #000000 !important;
+  border-bottom: 1px solid #f5c2e7 !important; /* Discrete pink separator on focus */
+}
+
+/* Reveal top bar when mouse hovers top area OR when URL bar is focused (Ctrl+L) */
+#navigator-toolbox:hover #nav-bar,
+#nav-bar:focus-within,
+#urlbar[focused="true"] {
+  margin-top: 0px !important;
+  opacity: 1 !important;
+}
+
+/* Zero out top toolbar padding when hidden */
+#navigator-toolbox {
+  border: none !important;
+  background-color: #000000 !important;
+}

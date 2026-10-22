@@ -1,0 +1,31 @@
+.dotfiles/
+├── flake.nix
+├── hosts/
+│   ├── proteus/
+│   │   ├── default.nix
+│   │   ├── hardware-configuration.nix
+│   │   └── home.nix
+│   │
+│   └── hermes/
+│       ├── default.nix
+│       ├── hardware-configuration.nix
+│       └── home.nix
+│
+└── home/
+    |---themes
+        |----pink-dark
+        |----pink-light
+    ├── nvim.nix
+    ├── git.nix
+    ├── shell.nix
+    ├── kde.nix
+    └── packages.nix
+
+
+    HOST="proteus"
+
+    git clone https://github.com/sudo-snuggle/.dotfiles.git ~/.dotfiles
+cp /etc/nixos/hardware-configuration.nix ~/.dotfiles/hosts/$HOST/hardware-configuration.nix
+git -C ~/.dotfiles add -N .
+sudo nixos-rebuild switch --extra-experimental-features "nix-command flakes" --flake ~/.dotfiles#$HOST
+rm -f ~/.dotfiles/hosts/$HOST/hardware-configuration.nix

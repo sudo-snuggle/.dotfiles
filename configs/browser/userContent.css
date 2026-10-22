@@ -1,0 +1,164 @@
+@-moz-document url-prefix("about:") {
+	body {
+		background-color: #0f0f0f !important;
+		color: #f4decd !important;
+	}
+
+	* {
+		border-radius: 0px !important;
+	}
+
+	button:hover, .button:hover {
+		background-color: #ef934d !important;
+		color: #0f0f0f !important;
+	}
+
+	* {
+		--text-color:							#f4decd !important;
+		--color-accent-primary:					light-dark(#ef934d55, #ef934d) !important;
+		--color-accent-secondary:				light-dark(#f4b58555, #f4b585) !important;
+	}
+
+	* {
+		--color-blue-0:  #71b4d6 !important;
+		--color-blue-10: #71b4d6 !important;
+		--color-blue-20: #71b4d6 !important;
+		--color-blue-30: #71b4d6 !important;
+		--color-blue-40: #71b4d6 !important;
+		--color-blue-50: #71b4d6 !important;
+		--color-blue-60: #71b4d6 !important;
+		--color-blue-70: #71b4d6 !important;
+		--color-blue-80: #71b4d6 !important;
+		--color-blue-90: #71b4d6 !important;
+		--color-cyan-0:  #7ec9a3 !important;
+		--color-cyan-10: #7ec9a3 !important;
+		--color-cyan-20: #7ec9a3 !important;
+		--color-cyan-30: #7ec9a3 !important;
+		--color-cyan-40: #7ec9a3 !important;
+		--color-cyan-50: #7ec9a3 !important;
+		--color-cyan-60: #7ec9a3 !important;
+		--color-cyan-70: #7ec9a3 !important;
+		--color-cyan-80: #7ec9a3 !important;
+		--color-cyan-90: #7ec9a3 !important;
+		--color-gray-0:  #fcfbff !important;
+		--color-gray-05: #f7f6fb !important;
+		--color-gray-10: #efedf2 !important;
+		--color-gray-15: #e3e2e7 !important;
+		--color-gray-20: #d6d5da !important;
+		--color-gray-25: #c7c6cb !important;
+		--color-gray-30: #b7b6ba !important;
+		--color-gray-35: #a6a4a9 !important;
+		--color-gray-40: #949297 !important;
+		--color-gray-45: #817f84 !important;
+		--color-gray-50: #67666a !important;
+		--color-gray-55: #515054 !important;
+		--color-gray-60: #3f3e42 !important;
+		--color-gray-65: #312f33 !important;
+		--color-gray-70: #252428 !important;
+		--color-gray-75: #1d1b1f !important;
+		--color-gray-80: #171519 !important;
+		--color-gray-85: #131215 !important;
+		--color-gray-90: #121114 !important;
+		--color-green-0:  #7ec97e !important;
+		--color-green-10: #7ec97e !important;
+		--color-green-20: #7ec97e !important;
+		--color-green-30: #7ec97e !important;
+		--color-green-40: #7ec97e !important;
+		--color-green-50: #7ec97e !important;
+		--color-green-60: #7ec97e !important;
+		--color-green-70: #7ec97e !important;
+		--color-green-80: #7ec97e !important;
+		--color-green-90: #7ec97e !important;
+		--color-orange-0:  #ef934d !important;
+		--color-orange-10: #ef934d !important;
+		--color-orange-20: #ef934d !important;
+		--color-orange-30: #ef934d !important;
+		--color-orange-40: #ef934d !important;
+		--color-orange-50: #ef934d !important;
+		--color-orange-60: #ef934d !important;
+		--color-orange-70: #ef934d !important;
+		--color-orange-80: #ef934d !important;
+		--color-orange-90: #ef934d !important;
+		--color-pink-0:  #ef934d !important;
+		--color-pink-10: #ef934d !important;
+		--color-pink-20: #ef934d !important;
+		--color-pink-30: #ef934d !important;
+		--color-pink-40: #ef934d !important;
+		--color-pink-50: #ef934d !important;
+		--color-pink-60: #ef934d !important;
+		--color-pink-70: #ef934d !important;
+		--color-pink-80: #ef934d !important;
+		--color-pink-90: #ef934d !important;
+		--color-purple-0:  #ef934d !important;
+		--color-purple-10: #ef934d !important;
+		--color-purple-20: #ef934d !important;
+		--color-purple-30: #ef934d !important;
+		--color-purple-40: #ef934d !important;
+		--color-purple-50: #ef934d !important;
+		--color-purple-60: #ef934d !important;
+		--color-purple-70: #ef934d !important;
+		--color-purple-80: #ef934d !important;
+		--color-purple-90: #ef934d !important;
+		--color-red-0:  #f16e65 !important;
+		--color-red-10: #f16e65 !important;
+		--color-red-20: #f16e65 !important;
+		--color-red-30: #f16e65 !important;
+		--color-red-40: #f16e65 !important;
+		--color-red-50: #f16e65 !important;
+		--color-red-60: #f16e65 !important;
+		--color-red-70: #f16e65 !important;
+		--color-red-80: #f16e65 !important;
+		--color-red-90: #f16e65 !important;
+		--color-violet-0:  #ef934d !important;
+		--color-violet-10: #ef934d !important;
+		--color-violet-20: #ef934d !important;
+		--color-violet-30: #ef934d !important;
+		--color-violet-40: #ef934d !important;
+		--color-violet-50: #ef934d !important;
+		--color-violet-60: #ef934d !important;
+		--color-violet-70: #ef934d !important;
+		--color-violet-80: #ef934d !important;
+		--color-violet-90: #ef934d !important;
+		--color-violet-desaturated-0:  #ef934d !important;
+		--color-violet-desaturated-10: #ef934d !important;
+		--color-violet-desaturated-20: #ef934d !important;
+		--color-violet-desaturated-30: #ef934d !important;
+		--color-violet-desaturated-40: #ef934d !important;
+		--color-violet-desaturated-50: #ef934d !important;
+		--color-violet-desaturated-60: #ef934d !important;
+		--color-violet-desaturated-70: #ef934d !important;
+		--color-violet-desaturated-80: #ef934d !important;
+		--color-violet-desaturated-90: #ef934d !important;
+		--color-yellow-0:  #efbf71 !important;
+		--color-yellow-10: #efbf71 !important;
+		--color-yellow-20: #efbf71 !important;
+		--color-yellow-30: #efbf71 !important;
+		--color-yellow-40: #efbf71 !important;
+		--color-yellow-50: #efbf71 !important;
+		--color-yellow-60: #efbf71 !important;
+		--color-yellow-70: #efbf71 !important;
+		--color-yellow-80: #efbf71 !important;
+		--color-yellow-90: #efbf71 !important;
+	}
+
+	* {
+		--background-color-box:					#1e1f1e !important;
+		--background-color-box-info:			#1e1f1e !important;
+		--background-color-information:		    #272a28 !important;
+		--background-color-canvas:				#0f0f0f !important;
+		--border-color:							#3b403c !important;
+		--border-color-deemphasized:			#3b403c !important;
+		--button-background-color-muted:		#272a28 !important;
+		--button-text-color-ghost-disabled:		#888e7b !important;
+		--button-border:						2px solid var(--border-color) !important;
+		--table-row-background-color-alternate:	#1e1f1e !important;
+		--text-color-accent-primary-selected:	var(--text-color) !important;
+	}
+
+	* {
+		--table-background-color:			var(--background-color-box) !important;
+		--table-border-color:				var(--border-color) !important;
+		--table-header-background-color:	var(--color-accent-primary) !important;
+		--table-row-background-color:		var(--background-color-canvas) !important;
+	}
+}
