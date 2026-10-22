@@ -5,9 +5,9 @@
     enable = true;
     
     # Snjn jh jh yf
-    coreOffset = -100;
-    gpuOffset = -45;
-    uncoreOffset = -100;
+    coreOffset = -90;
+    gpuOffset = -40;
+    uncoreOffset = -90;
     analogioOffset = 0;
 
   };
