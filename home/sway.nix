@@ -14,16 +14,14 @@
         };
       };
 
-      # Set modifier to Super (Mod4) for Sway window management
-      modifier = "Mod4";
-      terminal = "${pkgs.kitty}/bin/kitty";
+      # Set modifier back to Alt (Mod1)
+      modifier = "Mod1";
+      terminal = "${pkgs.alacritty}/bin/alacritty";
       menu = "${pkgs.fuzzel}/bin/fuzzel";
 
       input = {
         "type:keyboard" = {
           xkb_layout = "us";
-          # ctrl:swap_lalt_lctl swaps physical Left Alt and Left Ctrl
-          xkb_options = "ctrl:swap_lalt_lctl";
           repeat_delay = "300";
           repeat_rate = "50";
         };
@@ -55,6 +53,7 @@
         mod = config.wayland.windowManager.sway.config.modifier;
       in lib.mkOptionDefault {
         "${mod}+Return"      = "exec ${config.wayland.windowManager.sway.config.terminal}";
+        "${mod}+t"           = "exec ${config.wayland.windowManager.sway.config.terminal}";
         "${mod}+d"           = "exec ${config.wayland.windowManager.sway.config.menu}";
         "${mod}+q"           = "kill";
         "${mod}+f"           = "fullscreen toggle";
@@ -144,5 +143,6 @@
     swaybg
     swayidle
     swaylock
+    alacritty
   ];
 }
