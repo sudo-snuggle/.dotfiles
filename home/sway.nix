@@ -14,7 +14,7 @@
         };
       };
 
-      # Set modifier to Control (which sits right next to the spacebar due to the swap)
+      # You keep Control as your Sway modifier key!
       modifier = "Control";
       terminal = "${pkgs.alacritty}/bin/alacritty";
       menu = "${pkgs.fuzzel}/bin/fuzzel";
@@ -145,5 +145,6 @@
     swayidle
     swaylock
     alacritty
+    wtype
   ];
 }
