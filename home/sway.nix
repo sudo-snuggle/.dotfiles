@@ -22,6 +22,7 @@
       input = {
         "type:keyboard" = {
           xkb_layout = "us";
+          xkb_options = "ctrl:swap_lalt_lctl"; # <--- Restored your Ctrl / Alt swap here!
           repeat_delay = "300";
           repeat_rate = "50";
         };
