@@ -14,15 +14,14 @@
         };
       };
 
-      # You keep Control as your Sway modifier key!
-      modifier = "Control";
+      # Physical Alt (Mod1) is your universal Command key
+      modifier = "Mod1";
       terminal = "${pkgs.alacritty}/bin/alacritty";
       menu = "${pkgs.fuzzel}/bin/fuzzel";
 
       input = {
         "type:keyboard" = {
           xkb_layout = "us";
-          xkb_options = "ctrl:swap_lalt_lctl";
           repeat_delay = "300";
           repeat_rate = "50";
         };
@@ -72,6 +71,15 @@
 
         "${mod}+Shift+r" = "reload";
         "${mod}+Shift+e" = "exit";
+
+        #--------------- macOS App Shortcut Equivalents (Alt + Key) ---------------
+        # These map your physical Alt key to standard Ctrl actions in apps
+        "${mod}+c" = "exec wtype -M ctrl c -m ctrl"; # Copy
+        "${mod}+v" = "exec wtype -M ctrl v -m ctrl"; # Paste
+        "${mod}+x" = "exec wtype -M ctrl x -m ctrl"; # Cut
+        "${mod}+a" = "exec wtype -M ctrl a -m ctrl"; # Select All
+        "${mod}+z" = "exec wtype -M ctrl z -m ctrl"; # Undo
+        "${mod}+s" = "exec wtype -M ctrl s -m ctrl"; # Save
 
         # Screenshots
         "Print" = "exec grimshot savecopy area";
