@@ -16,6 +16,12 @@
 
     freesm.url = "github:FreesmTeam/FreesmLauncher";
 
+    # Helium Browser flake
+    helium = {
+      url = "github:amaanq/helium-flake";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Betterfox
     betterfox = {
       url = "github:yokoffing/Betterfox";
@@ -35,7 +41,7 @@
     };
   };
 
-  outputs = { self, nixpkgs, home-manager, nur, ... }@inputs: {
+  outputs = { self, nixpkgs, home-manager, nur, helium, ... }@inputs: {
     nixosConfigurations = {
 
       # =============== PROTEUS ===============
@@ -69,11 +75,12 @@
             };
           }
 
-          {
+        ({ pkgs, ... }: {
             environment.systemPackages = [
-              inputs.freesm.packages.x86_64-linux.freesmlauncher
+              inputs.freesm.packages.${pkgs.system}.freesmlauncher
+              inputs.helium.packages.${pkgs.system}.default
             ];
-          }
+          })
         ];
 
       };

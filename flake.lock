@@ -244,6 +244,26 @@
         "type": "gitlab"
       }
     },
+    "helium": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1792674624,
+        "narHash": "sha256-1hqI63X3aUiPBZqodC1u78lcxiKz1TL2/cL7rdpyA1Q=",
+        "owner": "amaanq",
+        "repo": "helium-flake",
+        "rev": "2aa77b2f0cb27c486e27f37f9fcd1c6f826076ac",
+        "type": "github"
+      },
+      "original": {
+        "owner": "amaanq",
+        "repo": "helium-flake",
+        "type": "github"
+      }
+    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -471,6 +491,7 @@
         "betterfox": "betterfox",
         "caelestia-shell": "caelestia-shell",
         "freesm": "freesm",
+        "helium": "helium",
         "home-manager": "home-manager",
         "inir": "inir",
         "nixpkgs": "nixpkgs_2",
