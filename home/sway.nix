@@ -14,15 +14,15 @@
         };
       };
 
-      # Set modifier back to Alt (Mod1)
-      modifier = "Mod1";
+      # Set modifier to Control (which sits right next to the spacebar due to the swap)
+      modifier = "Control";
       terminal = "${pkgs.alacritty}/bin/alacritty";
       menu = "${pkgs.fuzzel}/bin/fuzzel";
 
       input = {
         "type:keyboard" = {
           xkb_layout = "us";
-          xkb_options = "ctrl:swap_lalt_lctl"; # <--- Restored your Ctrl / Alt swap here!
+          xkb_options = "ctrl:swap_lalt_lctl";
           repeat_delay = "300";
           repeat_rate = "50";
         };
