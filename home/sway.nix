@@ -21,6 +21,7 @@
       input = {
         "type:keyboard" = {
           xkb_layout = "us";
+          xkb_options = "ctrl:swap_lalt_lctl";
           repeat_delay = "300";
           repeat_rate = "50";
         };
