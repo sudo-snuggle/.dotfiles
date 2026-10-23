@@ -14,13 +14,15 @@
         };
       };
 
-      modifier = "Mod1";
+      # Set modifier to Super (Mod4) for Sway window management
+      modifier = "Mod4";
       terminal = "${pkgs.kitty}/bin/kitty";
       menu = "${pkgs.fuzzel}/bin/fuzzel";
 
       input = {
         "type:keyboard" = {
           xkb_layout = "us";
+          # ctrl:swap_lalt_lctl swaps physical Left Alt and Left Ctrl
           xkb_options = "ctrl:swap_lalt_lctl";
           repeat_delay = "300";
           repeat_rate = "50";
@@ -142,6 +144,5 @@
     swaybg
     swayidle
     swaylock
-   
   ];
 }
