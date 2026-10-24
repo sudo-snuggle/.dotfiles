@@ -12,8 +12,8 @@
     ];
     volumes = [
       "/home/yasiru:/w:rw"
-      # Ensure this relative path points correctly to your config file 
-      ./config/copyparty.conf:/cfg/copyparty.conf:ro
+      # Use string interpolation for the path so Nix can append the container path and mode
+      "${./.}/../../config/copyparty.conf:/cfg/copyparty.conf:ro"
     ];
   };
 }
