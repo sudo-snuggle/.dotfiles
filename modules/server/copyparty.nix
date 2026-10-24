@@ -11,9 +11,10 @@
     volumes = [
       "/home/yasiru:/w:rw"
     ];
-    # Tell Copyparty to share /w directly via command line arguments since there's no config file
+    # Notice: spaces separate elements in Nix lists, NO commas!
     cmd = [
-      "-v", "/w::rwm"
+      "-v"
+      "/w::rwm"
     ];
   };
 }
