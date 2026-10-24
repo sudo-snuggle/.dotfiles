@@ -14,6 +14,7 @@
     #../../home/inir.nix
     #../../home/caelestia.nix
     #../../home/hyprland.nix
+    #../../home/ryoku.nix
   ];
 
   home.username = "yasiru";

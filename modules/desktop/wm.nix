@@ -44,6 +44,7 @@
   # Display Manager
   services.displayManager.ly.enable = true;
 
+
   # X11 / Desktop Infrastructure for GNOME
   services.xserver.enable = true;
   services.desktopManager.gnome.enable = true;
