@@ -18,6 +18,7 @@
     #../../modules/server/immich.nix
     #../../modules/server/nextcloud.nix
     #../../modules/server/ai.nix
+    ../../modules/server/copyparty.nix
   ];
 
   # ---------- boot & kernel ----------
