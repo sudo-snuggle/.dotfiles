@@ -42,7 +42,8 @@
       fih = "fish";
     };
   };
-
+  programs.fish.enable = true;
+users.users.yasiru.shell = pkgs.fish;
   # ---------- docker virtualisation ----------
   virtualisation.docker = {
     enable = true;
