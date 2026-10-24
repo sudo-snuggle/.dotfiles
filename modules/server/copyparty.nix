@@ -10,7 +10,10 @@
     ];
     volumes = [
       "/home/yasiru:/w:rw"
-      "/home/yasiru/.dotfiles/config/copyparty.conf:/cfg/copyparty.conf:ro"
+    ];
+    # Tell Copyparty to share /w directly via command line arguments since there's no config file
+    cmd = [
+      "-v", "/w::rwm"
     ];
   };
 }
