@@ -1,14 +1,19 @@
 { config, pkgs, ... }:
 
 {
-  services.copyparty = {
-    enable = true;
-    # You can configure port bindings, users, and volumes natively here:
-    settings = {
-      i = "0.0.0.0";
-      p = [ 130 ]; # Adjust port as needed
-    };
-    # Alternatively, if you want to load your existing configuration file:
-    # extraConfigPath = ./config/copyparty.conf;
+  virtualisation.oci-containers.backend = "docker";
+
+  virtualisation.oci-containers.containers.copyparty = {
+    image = "copyparty/ac:latest";
+    containerName = "copyparty";
+    restartPolicy = "unless-stopped";
+    ports = [
+      "130:3923"
+    ];
+    volumes = [
+      "/home/yasiru:/w:rw"
+      # Ensure this relative path points correctly to your config file 
+      ./config/copyparty.conf:/cfg/copyparty.conf:ro
+    ];
   };
 }
