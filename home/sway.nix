@@ -136,8 +136,7 @@
         # F9: Toggle SLT Fiber / Dialog 4G
         # (NetworkManager nmcli connection toggle kept for reference; iwctl variant below)
         # "XF86Tools" = "exec sh -c 'if nmcli -t -f NAME,TYPE connection show --active | grep -q \"^SLT-Fiber-2.4G_e130:802-11-wireless$\"; then nmcli connection down \"SLT-Fiber-2.4G_e130\" && nmcli connection up \"Dialog 4G 454\"; else nmcli connection down \"Dialog 4G 454\" 2>/dev/null; nmcli connection up \"SLT-Fiber-2.4G_e130\"; fi'";
-        "XF86Tools" = "exec sh -c 'if iwctl station wlan0 show | grep -q \"Connected network.*SLT-Fiber-2.4G_e130\"; then iwctl station wlan0 connect \"Dialog 4G 454\"; else iwctl station wlan0 connect \"SLT-Fiber-2.4G_e130\"; fi'";
-      };
+"XF86Tools" = "exec sh -c 'if iwctl station wlan0 show | grep -q \"SLT-Fiber-2.4G_e130\"; then iwctl station wlan0 scan; for i in 1 2 3 4 5; do if iwctl station wlan0 get-networks | grep -q \"Dialog 4G 454\"; then break; fi; sleep 1; done; iwctl station wlan0 connect \"Dialog 4G 454\"; else iwctl station wlan0 scan; for i in 1 2 3 4 5; do if iwctl station wlan0 get-networks | grep -q \"SLT-Fiber-2.4G_e130\"; then break; fi; sleep 1; done; iwctl station wlan0 connect \"SLT-Fiber-2.4G_e130\"; fi'";      };
 
       bars = [
         {
