@@ -14,11 +14,11 @@
     ../../modules/laptop/undervolt.nix
     ../../modules/boot/grub-opencore.nix
     ../../modules/desktop/steam.nix
-    ../../modules/server/ai.nix
+    #../../modules/server/ai.nix
     ../../modules/desktop/appimage.nix
-    ../../modules/desktop/virt.nix
+    #../../modules/desktop/virt.nix
     #../../modules/desktop/polkit.nix
-    ../../modules/laptop/syncthing.nix
+    #../../modules/laptop/syncthing.nix
     ../../modules/laptop/fonts.nix
 
   ];
@@ -28,7 +28,13 @@
 
   # ---------- networking ----------
   networking.hostName = "proteus";
-  networking.networkmanager.enable = true;
+  networking.networkmanager.enable = false;
+networking.wireless.iwd.enable = true;
+systemd.network.enable = true;
+
+services.pipewire.enable = lib.mkForce false;
+security.rtkit.enable = false;
+hardware.alsa.enable = true;
 
   # ---------- users (host-specific packages) ----------
   users.users.yasiru = {
@@ -36,14 +42,14 @@
     description = "yasiru";
     extraGroups = [ "networkmanager" "wheel" "libvirtd" ];
     packages = with pkgs; [
-      tree
+      #tree
       vscodium
       btop
       intel-gpu-tools
       stress-ng
       brave-origin
       
-      librewolf
+      #librewolf
       sunshine
     ];
   };
@@ -51,8 +57,8 @@
 
 
 services.sunshine = {
-  enable = true;
-  autoStart = true;
+  enable = false;
+  autoStart = false;
   capSysAdmin = true; # Needed for input/display capture permissions on Linux
 };
 
@@ -77,9 +83,9 @@ services.sunshine = {
     git
   #  tailscale
     powertop
-    qbittorrent
-    bottles
-    lutris
+   # qbittorrent
+   # bottles
+    #lutris
     pcmanfm-qt
     gh
     qutebrowser

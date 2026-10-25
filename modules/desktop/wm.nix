@@ -42,16 +42,16 @@
   # ==========================================
 
   # Display Manager
-  services.displayManager.ly.enable = true;
+  services.displayManager.ly.enable = false;
 
 
   # X11 / Desktop Infrastructure for GNOME
-  services.xserver.enable = true;
-  services.desktopManager.gnome.enable = true;
+  #services.xserver.enable = true;
+  #services.desktopManager.gnome.enable = true;
 
   # Sway Window Manager
   programs.sway = {
     enable = true;
-    wrapperFeatures.gtk = true;
+   # wrapperFeatures.gtk = true;
   };
 }

@@ -4,13 +4,22 @@
   wayland.windowManager.sway = {
     enable = true;
 
-    wrapperFeatures.gtk = true;
+    # Correct location for xwayland flag:
+    xwayland = false;
+
+    # Stripped GTK wrapper feature to save startup overhead / D-Bus hooks
+    # wrapperFeatures.gtk = true;
+    wrapperFeatures.gtk = false;
 
     config = {
       output = {
         "eDP-1" = {
           mode = "1920x1080@47.999Hz";
           scale = "1.0";
+        };
+        # Ditch swaybg (~8 MB RAM saved) by using solid pitch-black background
+        "*" = {
+          bg = "#000000 solid_color";
         };
       };
 
@@ -86,11 +95,15 @@
         "Shift+Print" = "exec grimshot savecopy screen";
         "Ctrl+Print" = "exec grimshot save active";
 
-        # Audio
-        "XF86AudioMute" = "exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
-        "XF86AudioLowerVolume" = "exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-";
-        "XF86AudioRaiseVolume" = "exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+";
-        "XF86AudioMicMute" = "exec wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle";
+        # Audio (Pure ALSA amixer bindings if PipeWire is disabled)
+        # "XF86AudioMute" = "exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
+        # "XF86AudioLowerVolume" = "exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-";
+        # "XF86AudioRaiseVolume" = "exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+";
+        # "XF86AudioMicMute" = "exec wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle";
+        "XF86AudioMute" = "exec amixer set Master toggle";
+        "XF86AudioLowerVolume" = "exec amixer set Master 5%-";
+        "XF86AudioRaiseVolume" = "exec amixer set Master 5%+";
+        "XF86AudioMicMute" = "exec amixer set Capture toggle";
 
         # Brightness
         "XF86MonBrightnessDown" =
@@ -103,9 +116,9 @@
         "F7" = "exec nwg-displays";
         "XF86Display" = "exec nwg-displays";
 
-        # Wi-Fi
-        "XF86WLAN" =
-          "exec nmcli radio wifi off && nmcli radio wifi on";
+        # Wi-Fi (Lightweight iwd / iwctl variant if NetworkManager is removed)
+        # "XF86WLAN" = "exec nmcli radio wifi off && nmcli radio wifi on";
+        "XF86WLAN" = "exec sh -c 'if iwctl device wlan0 show | grep -q \"Powered.*on\"; then iwctl device wlan0 set-property Powered off; else iwctl device wlan0 set-property Powered on; fi'";
 
         # F10
         "XF86Search" = "exec firefox";
@@ -121,8 +134,9 @@
         "Ctrl+y" = "exec bash -c 'wtype -M ctrl l -m ctrl && wtype -M ctrl c -m ctrl && sleep 0.2 && mpv \"$(wl-paste)\"'";
 
         # F9: Toggle SLT Fiber / Dialog 4G
-        "XF86Tools" =
-          "exec sh -c 'if nmcli -t -f NAME,TYPE connection show --active | grep -q \"^SLT-Fiber-2.4G_e130:802-11-wireless$\"; then nmcli connection down \"SLT-Fiber-2.4G_e130\" && nmcli connection up \"Dialog 4G 454\"; else nmcli connection down \"Dialog 4G 454\" 2>/dev/null; nmcli connection up \"SLT-Fiber-2.4G_e130\"; fi'";
+        # (NetworkManager nmcli connection toggle kept for reference; iwctl variant below)
+        # "XF86Tools" = "exec sh -c 'if nmcli -t -f NAME,TYPE connection show --active | grep -q \"^SLT-Fiber-2.4G_e130:802-11-wireless$\"; then nmcli connection down \"SLT-Fiber-2.4G_e130\" && nmcli connection up \"Dialog 4G 454\"; else nmcli connection down \"Dialog 4G 454\" 2>/dev/null; nmcli connection up \"SLT-Fiber-2.4G_e130\"; fi'";
+        "XF86Tools" = "exec sh -c 'if iwctl station wlan0 show | grep -q \"Connected network.*SLT-Fiber-2.4G_e130\"; then iwctl station wlan0 connect \"Dialog 4G 454\"; else iwctl station wlan0 connect \"SLT-Fiber-2.4G_e130\"; fi'";
       };
 
       bars = [
@@ -149,11 +163,10 @@
     i3status
     wl-clipboard
     sway-contrib.grimshot
-    swaybg
+    # swaybg # Removed to save RAM (using output * bg #000000 solid_color)
     swayidle
     swaylock
     alacritty
     wtype
   ];
-   
 }
