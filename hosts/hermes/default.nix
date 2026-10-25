@@ -19,6 +19,7 @@
     #../../modules/server/nextcloud.nix
     #../../modules/server/ai.nix
     ../../modules/server/copyparty.nix
+    ../../modules/laptop/tlp-server.nix
   ];
 
   # ---------- boot & kernel ----------
