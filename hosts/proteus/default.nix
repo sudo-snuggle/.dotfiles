@@ -53,7 +53,7 @@ security.rtkit.enable = true;  # PipeWire and PulseAudio require it for real-tim
       intel-gpu-tools
       stress-ng
       brave-origin
-      
+      pavucontrol
       #librewolf
       sunshine
     ];
