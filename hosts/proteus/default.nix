@@ -54,7 +54,7 @@ hardware.alsa.enable = true;
     ];
   };
 
-
+virtualisation.waydroid.enable = true;
 
 services.sunshine = {
   enable = false;
