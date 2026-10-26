@@ -32,9 +32,14 @@
 networking.wireless.iwd.enable = true;
 systemd.network.enable = true;
 
-services.pipewire.enable = lib.mkForce false;
-security.rtkit.enable = false;
-hardware.alsa.enable = true;
+services.pipewire = {
+  enable = true;
+  alsa.enable = true;
+  alsa.support32Bit = true;
+  pulse.enable = true;   # Key: provide PulseAudio compatibility layer, create /run/user/1000/pulse/native
+};
+security.rtkit.enable = true;  # PipeWire and PulseAudio require it for real-time scheduling
+
 
   # ---------- users (host-specific packages) ----------
   users.users.yasiru = {
