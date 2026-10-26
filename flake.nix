@@ -38,7 +38,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
-#dsdsd
+
   outputs =
     {
       self,
@@ -98,6 +98,7 @@
               { pkgs, ... }:
               {
                 environment.systemPackages = [
+                  inputs.freesm.packages.${pkgs.system}.freesmlauncher
                   inputs.helium.packages.${pkgs.system}.default
                 ];
               }
