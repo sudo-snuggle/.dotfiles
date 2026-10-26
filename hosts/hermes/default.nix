@@ -20,6 +20,8 @@
     #../../modules/server/ai.nix
     ../../modules/server/copyparty.nix
     ../../modules/laptop/tlp-server.nix
+    ../../modules/desktop/wm.nix
+
   ];
 
   # ---------- boot & kernel ----------
@@ -45,6 +47,8 @@
   };
   programs.fish.enable = true;
 users.users.yasiru.shell = pkgs.fish;
+
+
   # ---------- docker virtualisation ----------
   virtualisation.docker = {
     enable = true;
@@ -53,9 +57,6 @@ users.users.yasiru.shell = pkgs.fish;
       dates = "weekly";
     };
   };
-
-services.displayManager.ly.enable = true;
-  services.desktopManager.plasma6.enable = true;
 
   # ---------- essential server packages ----------
   environment.systemPackages = with pkgs; [
