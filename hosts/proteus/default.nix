@@ -55,6 +55,7 @@ hardware.alsa.enable = true;
   };
 
 virtualisation.waydroid.enable = true;
+virtualisation.waydroid.package = pkgs.waydroid-nftables;
 
 services.sunshine = {
   enable = false;
