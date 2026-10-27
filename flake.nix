@@ -54,7 +54,7 @@
     {
       nixosConfigurations = {
 
-        # =============== PROTEUS (Workstation) ===============
+        # =============== PROTEUS ===============
         proteus = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
           specialArgs = { inherit inputs; };
@@ -86,7 +86,39 @@
           ];
         };
 
-        # =============== HERMES (Home Server) ===============
+        # =============== AENEAS ===============
+        
+        aeneas = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          specialArgs = { inherit inputs; };
+
+          modules = [
+            ./hosts/aeneas
+            home-manager.nixosModules.home-manager
+
+            {
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+                backupFileExtension = "backup";
+                extraSpecialArgs = { inherit inputs; };
+                users.yasiru = import ./hosts/aeneas/home.nix;
+              };
+            }
+
+            (
+              { pkgs, ... }:
+              {
+                environment.systemPackages = [
+                  inputs.helium.packages.${pkgs.system}.default
+                ];
+              }
+            )
+          ];
+        };
+
+        # =============== HERMES  ===============
+          
         hermes = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
           specialArgs = { inherit inputs; };

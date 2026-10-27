@@ -28,9 +28,7 @@
 
   # ---------- networking ----------
   networking.hostName = "proteus";
-  networking.networkmanager.enable = false;
-networking.wireless.iwd.enable = true;
-systemd.network.enable = true;
+  networking.networkmanager.enable = true;
 
 services.pipewire = {
   enable = true;
