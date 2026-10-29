@@ -66,6 +66,12 @@ services.sunshine = {
   capSysAdmin = true; # Needed for input/display capture permissions on Linux
 };
 
+services.input-remapper = {
+  enable = true;
+  enableUdevRules = true; # Recommended to enable for automatic device detection
+};
+
+
   # ---------- shell ----------
   programs.bash = {
     enable = true;
