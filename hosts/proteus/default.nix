@@ -124,6 +124,35 @@ systemd.user.services.polkit-gnome-authentication-agent-1 = {
   # Enable the Virtual KMS display driver
 boot.kernelModules = [ "vkms" ];
 
+boot.kernelParams = [
+    "quiet"
+    "loglevel=3"
+    "systemd.show_status=auto"
+    "rd.udev.log_level=3"
+    "i915.fastboot=1"
+  ];
+
+  # 3. Fast stage-1 initrd 
+  boot.initrd = {
+    systemd.enable = true;
+    includeDefaultModules = false;
+    availableKernelModules = [ 
+      "ahci"         # SATA AHCI controller
+      "libahci"      # AHCI library
+      "libata"       # ATA bus support
+      "sd_mod"       # SCSI/SATA disk driver (/dev/sdX)
+      "xhci_pci"     # USB 3.0 controller
+      "i915"         # Intel UHD 620 GPU (early KMS)
+      "ext4"         # Root filesystem
+      "atkbd"        # Built-in ThinkPad keyboard
+      "hid_generic"  # Universal HID support
+      "usbhid"       # External USB keyboards
+    ];
+  };
+
+  # 4. Asynchronous network bring-up (don't block boot on Wi-Fi)
+  systemd.services.NetworkManager-wait-online.enable = false;
+
 
   # ---------- gamemode (proteus only in original) ----------
   programs.gamemode.enable = true;
