@@ -1,24 +1,20 @@
 { config, lib, pkgs, ... }:
 
 {
-  boot.loader.systemd-boot.enable = false;
+boot.loader.timeout = 0;
 
-  boot.loader.grub = {
+  # Enable systemd-boot and disable GRUB
+  boot.loader.grub.enable = false;
+  boot.loader.systemd-boot = {
     enable = true;
-    device = "nodev";
-    efiSupport = true;
-    useOSProber = true;
-
-    extraEntries = ''
-      menuentry "Macos" {
-        insmod part_gpt
-        insmod fat
-        insmod search
-        insmod chain
-        search --no-floppy --file --set=root /EFI/OC/OpenCore.efi
-        chainloader /EFI/OC/OpenCore.efi
-      }
-    '';
+    configurationLimit = 5;
+    
+    extraEntries = {
+      "macos.conf" = ''
+        title macOS (OpenCore)
+        efi /EFI/OC/OpenCore.efi
+      '';
+    };
   };
 
   boot.loader.efi.canTouchEfiVariables = true;
