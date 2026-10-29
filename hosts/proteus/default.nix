@@ -43,7 +43,7 @@ security.rtkit.enable = true;  # PipeWire and PulseAudio require it for real-tim
   users.users.yasiru = {
     isNormalUser = true;
     description = "yasiru";
-    extraGroups = [ "networkmanager" "wheel" "libvirtd" ];
+    extraGroups = [ "networkmanager" "wheel" "libvirtd" "input" ];
     packages = with pkgs; [
       #tree
       vscodium
