@@ -60,18 +60,12 @@ security.rtkit.enable = true;  # PipeWire and PulseAudio require it for real-tim
 virtualisation.waydroid.enable = true;
 virtualisation.waydroid.package = pkgs.waydroid-nftables;
 
-services.playerctld.enable = true;
 
 
 services.sunshine = {
   enable = false;
   autoStart = false;
   capSysAdmin = true; # Needed for input/display capture permissions on Linux
-};
-
-services.input-remapper = {
-  enable = true;
-  enableUdevRules = true; # Recommended to enable for automatic device detection
 };
 
 
