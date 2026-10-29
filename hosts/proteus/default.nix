@@ -60,6 +60,9 @@ security.rtkit.enable = true;  # PipeWire and PulseAudio require it for real-tim
 virtualisation.waydroid.enable = true;
 virtualisation.waydroid.package = pkgs.waydroid-nftables;
 
+services.playerctld.enable = true;
+
+
 services.sunshine = {
   enable = false;
   autoStart = false;
