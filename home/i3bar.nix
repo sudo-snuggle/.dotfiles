@@ -1,4 +1,3 @@
-
 { config, pkgs, lib, ... }:
 
 {
@@ -22,26 +21,26 @@
             format = " $timestamp.datetime(f:'%Y-%m-%d') ";
           }
 
-          # BATTERY: internal
+          # BATTERY: internal — $power shows live draw in Watts
           {
             block = "battery";
             device = "BAT0";
             driver = "sysfs";
-            interval = 30;
-            format = " BAT0: $percentage ";
-            charging_format = " BAT0: $percentage ⚡";
+            interval = 10;
+            format = " BAT0: $percentage $power ";
+            charging_format = " BAT0: $percentage $power ⚡";
             full_format = " BAT0: $percentage ";
             missing_format = "";
           }
 
-          # BATTERY: removable
+          # BATTERY: removable — $power shows live draw in Watts
           {
             block = "battery";
             device = "BAT1";
             driver = "sysfs";
-            interval = 30;
-            format = " BAT1: $percentage ";
-            charging_format = " BAT1: $percentage ⚡";
+            interval = 10;
+            format = " BAT1: $percentage $power ";
+            charging_format = " BAT1: $percentage $power ⚡";
             full_format = " BAT1: $percentage ";
             missing_format = "";
           }
@@ -68,7 +67,7 @@
           # CPU
           {
             block = "cpu";
-            interval = 5;
+            interval = 10;
             format = " CPU: $utilization ";
             info_cpu = 50;
             warning_cpu = 80;
@@ -95,77 +94,19 @@
             missing_format = " WLAN: -- ";
           }
 
-          # POWER DRAW
+          # FAN RPM — 60s is plenty, fan never runs anyway
           {
             block = "custom";
             shell = "sh";
-
-            command = ''
-              total=0
-              found=0
-
-              for bat in /sys/class/power_supply/BAT*; do
-                [ -d "$bat" ] || continue
-
-                if [ -r "$bat/power_now" ]; then
-                  value=$(cat "$bat/power_now" 2>/dev/null)
-
-                  if [ -n "$value" ]; then
-                    total=$((total + value))
-                    found=1
-                    continue
-                  fi
-                fi
-
-                if [ -r "$bat/current_now" ] &&
-                   [ -r "$bat/voltage_now" ]; then
-                  current=$(cat "$bat/current_now" 2>/dev/null)
-                  voltage=$(cat "$bat/voltage_now" 2>/dev/null)
-
-                  if [ -n "$current" ] && [ -n "$voltage" ]; then
-                    value=$(awk \
-                      -v c="$current" \
-                      -v v="$voltage" \
-                      'BEGIN { printf "%.0f", (c * v) / 1000000 }')
-
-                    total=$((total + value))
-                    found=1
-                  fi
-                fi
-              done
-
-              if [ "$found" -eq 1 ]; then
-                awk -v power="$total" \
-                  'BEGIN { printf "%.1fW", power / 1000000 }'
-              else
-                printf "N/A"
-              fi
-            '';
-
-            interval = 5;
-            format = " Power: $text ";
-          }
-
-          # FAN RPM
-          {
-            block = "custom";
-            shell = "sh";
-
             command = ''
               if [ -r /proc/acpi/ibm/fan ]; then
-                rpm=$(awk '/^speed:/ {print $2; exit}' /proc/acpi/ibm/fan)
-
-                if [ -n "$rpm" ]; then
-                  printf "%s" "$rpm"
-                else
-                  printf -- "--"
-                fi
-              else
-                printf -- "--"
+                while read -r k v _; do
+                  [ "$k" = "speed:" ] && { printf "%s" "$v"; exit; }
+                done < /proc/acpi/ibm/fan
               fi
+              printf -- "--"
             '';
-
-            interval = 5;
+            interval = 60;
             format = " Fan: $text RPM ";
           }
         ];
