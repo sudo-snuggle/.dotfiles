@@ -59,4 +59,40 @@ virtualisation.oci-containers.containers.jellyfin = {
 };
 
 
+
+
+
+
+
+
+  # 1. Tell NixOS NOT to start Pinchflat automatically on boot/rebuild
+  virtualisation.oci-containers.containers.pinchflat.autoStart = false;
+
+  # 2. Timer to START Pinchflat at 12:30 AM
+  systemd.timers."pinchflat-night-start" = {
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar = "*-*-* 00:30:00"; # Every day at 12:30 AM
+      Unit = "docker-pinchflat.service";
+    };
+  };
+
+  # 3. Timer to STOP Pinchflat at 7:00 AM
+  systemd.timers."pinchflat-morning-stop" = {
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar = "*-*-* 07:00:00"; # Every day at 7:00 AM
+      Unit = "pinchflat-stop.service";
+    };
+  };
+
+  # 4. The helper service that actually stops the container
+  systemd.services."pinchflat-stop" = {
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.docker}/bin/docker stop pinchflat";
+    };
+  };
+
+
 }
