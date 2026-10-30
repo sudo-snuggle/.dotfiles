@@ -19,22 +19,21 @@
   };
 
 
-  virtualisation.oci-containers.containers.tubesync = {
-    image = "ghcr.io/meeb/tubesync:latest";
-    ports = [
-      "190:4848"  # Host port 190 → Container default port 4848
-    ];
-    volumes = [
-  "/home/yasiru/docker/tubesync-config:/config"
-  "/home/yasiru/tubesync/others:/downloads/others"
-  "/home/yasiru/tubesync/main:/downloads/main"
-];
-    environment = {
-      TZ = "Asia/Colombo";  # Adjust according to your timezone
-      PUID = "1000";
-      PGID = "1000";
-    };
+ virtualisation.oci-containers.containers.pinchflat = {
+  image = "ghcr.io/kieraneglin/pinchflat:latest";
+  ports = [
+    "190:8945"  # Host port 190 → Container default port 8945 (Pinchflat's default)
+  ];
+  volumes = [
+    "/home/yasiru/docker/pinchflat-config:/config"
+    "/home/yasiru/tubesync/others:/downloads/others"
+    "/home/yasiru/tubesync/main:/downloads/main"
+  ];
+  environment = {
+    TZ = "Asia/Colombo";
+    # Note: Pinchflat does NOT use PUID/PGID. It runs as the user that executes the container.
+    # You might need to ensure the host folders are writable by your user (yasiru).
   };
-
+};
 
 }
