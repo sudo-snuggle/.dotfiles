@@ -56,10 +56,6 @@ virtualisation.oci-containers.containers.jellyfin = {
     PGID = "1000";
     TZ = "Asia/Colombo"; # Changed from UTC to your local time
   };
-  # This replaces the 'restart: unless-stopped' from docker-compose
-  extraOptions = [
-    "--restart=unless-stopped"
-  ];
 };
 
 
