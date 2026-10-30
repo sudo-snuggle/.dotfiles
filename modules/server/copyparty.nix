@@ -11,7 +11,7 @@
     volumes = [
       "/home/yasiru:/w:rw"
     ];
-    # Notice: spaces separate elements in Nix lists, NO commas!
+    # Note -  spaces separate elements in nix lists, NOt commas
     cmd = [
       "-v"
       "/w::rwm"
@@ -25,9 +25,10 @@
       "190:4848"  # Host port 190 → Container default port 4848
     ];
     volumes = [
-      "/home/yasiru/docker/tubesync-config:/config"
-      "/home/yasiru/tubesync:/downloads"
-    ];
+  "/home/yasiru/docker/tubesync-config:/config"
+  "/home/yasiru/tubesync/others:/downloads/others"
+  "/home/yasiru/tubesync/main:/downloads/main"
+];
     environment = {
       TZ = "Asia/Colombo";  # Adjust according to your timezone
       PUID = "1000";
