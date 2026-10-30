@@ -22,10 +22,9 @@
 virtualisation.oci-containers.containers.pinchflat = {
   image = "ghcr.io/kieraneglin/pinchflat:latest";
   ports = [ "190:8945" ];
-  volumes = [
+ volumes = [
     "/home/yasiru/docker/pinchflat-config:/config"
-    "/home/yasiru/tubesync/others:/downloads/others"
-    "/home/yasiru/tubesync/main:/downloads/main"
+    "/home/yasiru/pinchflat:/downloads"
   ];
   environment = {
     TZ = "Asia/Colombo";
