@@ -36,4 +36,31 @@ virtualisation.oci-containers.containers.pinchflat = {
   ];
 };
 
+
+virtualisation.oci-containers.containers.jellyfin = {
+  image = "jellyfin/jellyfin:latest";
+  ports = [
+    "170:8096"
+  ];
+  volumes = [
+    # 1. Config and Cache (Inside ~/docker/jellyfin)
+    "/home/yasiru/docker/jellyfin/config:/config"
+    "/home/yasiru/docker/jellyfin/cache:/cache"
+    
+    # 2. Media Folders (Read-Write)
+    "/home/yasiru/Videos:/media:rw"
+    "/home/yasiru/pinchflat:/pinchflat:rw"
+  ];
+  environment = {
+    PUID = "1000";
+    PGID = "1000";
+    TZ = "Asia/Colombo"; # Changed from UTC to your local time
+  };
+  # This replaces the 'restart: unless-stopped' from docker-compose
+  extraOptions = [
+    "--restart=unless-stopped"
+  ];
+};
+
+
 }
