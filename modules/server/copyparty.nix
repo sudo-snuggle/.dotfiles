@@ -33,7 +33,11 @@
     TZ = "Asia/Colombo";
     # Note: Pinchflat does NOT use PUID/PGID. It runs as the user that executes the container.
     # You might need to ensure the host folders are writable by your user (yasiru).
+  
+  
   };
+
+  dns = [ "8.8.8.8" "1.1.1.1" ];
 };
 
 }
