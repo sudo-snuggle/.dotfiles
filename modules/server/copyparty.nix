@@ -17,4 +17,23 @@
       "/w::rwm"
     ];
   };
+
+
+  virtualisation.oci-containers.containers.tubesync = {
+    image = "ghcr.io/meeb/tubesync:latest";
+    ports = [
+      "190:4848"  # Host port 190 → Container default port 4848
+    ];
+    volumes = [
+      "/home/yasiru/docker/tubesync-config:/config"
+      "/home/yasiru/tubesync:/downloads"
+    ];
+    environment = {
+      TZ = "Asia/Colombo";  # Adjust according to your timezone
+      PUID = "1000";
+      PGID = "1000";
+    };
+  };
+
+
 }
