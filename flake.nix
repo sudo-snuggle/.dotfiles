@@ -130,7 +130,7 @@
               { pkgs, ... }:
               {
                 environment.systemPackages = [
-                  inputs.freesm.packages.${pkgs.system}.freesmlauncher
+                 # inputs.freesm.packages.${pkgs.system}.freesmlauncher
                   inputs.helium.packages.${pkgs.system}.default
                 ];
               }
