@@ -121,14 +121,19 @@ users.users.yasiru.shell = pkgs.fish;
 services.pihole-ftl = {
     enable = true;
     settings = {
-      schema_version = 23; # Required by the module assertion
-      webserver = {
-        port = "7070";
-        api.password = "YourSecurePasswordHere";
-      };
+      schema_version = 23;
+      dns.upstreams = [
+        "9.9.9.9"
+        "1.1.1.1"
+      ];
     };
   };
 
+  # Enable the Pi-hole Web UI dashboard on port 7070
+  services.pihole-web = {
+    enable = true;
+    ports = [ "7070" ];
+  };
   # ---------- swap setup ----------
   swapDevices = [
     {
