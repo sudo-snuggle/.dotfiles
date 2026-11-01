@@ -117,6 +117,16 @@ users.users.yasiru.shell = pkgs.fish;
 
 #kksdd 
 
+
+services.adguardhome = {
+  enable = true;
+  settings = {
+    http.address = "0.0.0.0:7070";
+    # Allow saving settings via the Web UI
+    schema_version = 20;
+  };
+};
+
   # ---------- swap setup ----------
   swapDevices = [
     {

@@ -3,7 +3,7 @@
 { config, lib, pkgs, inputs, ... }:
 
 {
-    imports = [
+  imports = [
     ./hardware-configuration.nix
     ../../modules/core/nix-settings.nix
     ../../modules/core/locale.nix
@@ -20,8 +20,21 @@
     #../../modules/desktop/polkit.nix
     #../../modules/laptop/syncthing.nix
     ../../modules/laptop/fonts.nix
-
   ];
+
+  # ---------- ryoku desktop ----------
+  programs.ryoku = {
+    enable = true;
+    defaultCompositor = "hyprland"; # Options: "hyprland", "niri"
+    browser = "firefox";           # Options: "firefox", "chromium"
+    shell = "zsh";                 # Options: "zsh", "fish"
+    optionalApps = [
+      "prompt"
+      "fastfetch"
+      "yazi"
+      "cli-tools"
+    ];
+  };
 
   # ---------- boot ----------
   boot.kernelPackages = pkgs.linuxPackages_latest;
@@ -30,14 +43,13 @@
   networking.hostName = "proteus";
   networking.networkmanager.enable = true;
 
-services.pipewire = {
-  enable = true;
-  alsa.enable = true;
-  alsa.support32Bit = true;
-  pulse.enable = true;   # Key: provide PulseAudio compatibility layer, create /run/user/1000/pulse/native
-};
-security.rtkit.enable = true;  # PipeWire and PulseAudio require it for real-time scheduling
-
+  services.pipewire = {
+    enable = true;
+    alsa.enable = true;
+    alsa.support32Bit = true;
+    pulse.enable = true;   # Key: provide PulseAudio compatibility layer, create /run/user/1000/pulse/native
+  };
+  security.rtkit.enable = true;  # PipeWire and PulseAudio require it for real-time scheduling
 
   # ---------- users (host-specific packages) ----------
   users.users.yasiru = {
@@ -57,17 +69,14 @@ security.rtkit.enable = true;  # PipeWire and PulseAudio require it for real-tim
     ];
   };
 
-virtualisation.waydroid.enable = true;
-virtualisation.waydroid.package = pkgs.waydroid-nftables;
+  virtualisation.waydroid.enable = true;
+  virtualisation.waydroid.package = pkgs.waydroid-nftables;
 
-
-
-services.sunshine = {
-  enable = false;
-  autoStart = false;
-  capSysAdmin = true; # Needed for input/display capture permissions on Linux
-};
-
+  services.sunshine = {
+    enable = false;
+    autoStart = false;
+    capSysAdmin = true; # Needed for input/display capture permissions on Linux
+  };
 
   # ---------- shell ----------
   programs.bash = {
@@ -77,23 +86,21 @@ services.sunshine = {
     };
   };
 
-
   security.polkit.enable = true;
 
-systemd.user.services.polkit-gnome-authentication-agent-1 = {
-  description = "polkit-gnome-authentication-agent-1";
-  wantedBy = [ "graphical-session.target" ];
-  wants = [ "graphical-session.target" ];
-  after = [ "graphical-session.target" ];
-  serviceConfig = {
-    Type = "simple";
-    ExecStart = "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1";
-    Restart = "on-failure";
-    RestartSec = 1;
-    TimeoutStopSec = 10;
+  systemd.user.services.polkit-gnome-authentication-agent-1 = {
+    description = "polkit-gnome-authentication-agent-1";
+    wantedBy = [ "graphical-session.target" ];
+    wants = [ "graphical-session.target" ];
+    after = [ "graphical-session.target" ];
+    serviceConfig = {
+      Type = "simple";
+      ExecStart = "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1";
+      Restart = "on-failure";
+      RestartSec = 1;
+      TimeoutStopSec = 10;
+    };
   };
-};
-
 
   # ---------- VM writeback ----------
   boot.kernel.sysctl = {
@@ -106,29 +113,26 @@ systemd.user.services.polkit-gnome-authentication-agent-1 = {
     linuxPackages.cpupower
     linuxPackages.turbostat
     git
-  #  tailscale
+    # tailscale
     powertop
-   # qbittorrent
-   # bottles
-    #lutris
+    # qbittorrent
+    # bottles
+    # lutris
     pcmanfm-qt
     gh
     qutebrowser
-
-      wlr-randr
-      nwg-displays
-  kanshi
-  wlr-randr
+    wlr-randr
+    nwg-displays
+    kanshi
   ];
 
   # Enable the Virtual KMS display driver
-boot.kernelModules = [ "vkms" ];
-
+  boot.kernelModules = [ "vkms" ];
 
   # ---------- gamemode (proteus only in original) ----------
   programs.gamemode.enable = true;
 
-networking.firewall = {
+  networking.firewall = {
     enable = true;
     allowedTCPPorts = [ 7070 47984 47989 47990 48010 ];
     allowedUDPPortRanges = [

@@ -37,6 +37,9 @@
       url = "github:caelestia-dots/shell";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Ryoku Desktop Flake
+    ryoku.url = "github:aethctl/Ryoku-on-NixOS";
   };
 
   outputs =
@@ -49,6 +52,7 @@
       freesm,
       inir,
       caelestia-shell,
+      ryoku,
       ...
     }@inputs:
     {
@@ -63,8 +67,22 @@
             ./hosts/proteus
             nur.modules.nixos.default
             home-manager.nixosModules.home-manager
+            ryoku.nixosModules.default
 
             {
+              programs.ryoku = {
+                enable = true;
+                defaultCompositor = "hyprland"; # Options: "hyprland", "niri"
+                browser = "firefox";           # Options: "firefox", "chromium"
+                shell = "zsh";                 # Options: "zsh", "fish"
+                optionalApps = [
+                  "prompt"
+                  "fastfetch"
+                  "yazi"
+                  "cli-tools"
+                ];
+              };
+
               home-manager = {
                 useGlobalPkgs = true;
                 useUserPackages = true;
