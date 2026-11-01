@@ -141,14 +141,12 @@ services.pihole-ftl = {
       size = 4096; # 4GB Swapfile
     }
   ];
-
-
+  
 networking = {
-    # Replace 'enp3s0' with your actual interface name
-    interfaces.enp8s0.ipv4.addresses = [ {
-      # Choose an IP outside the range Pi-hole will hand out later
+    # Use your actual wireless interface name from your terminal (`wlp9s0`)
+    interfaces.wlp9s0.ipv4.addresses = [ {
       address = "192.168.1.9"; 
-      prefixLength = 24; # This is the subnet mask (255.255.255.0)
+      prefixLength = 24;
     } ];
 
     # Set the gateway to your router's IP
@@ -157,7 +155,6 @@ networking = {
     # Point DNS to Pi-hole (localhost) so the server uses itself
     nameservers = [ "127.0.0.1" ];
   };
-
 
   system.stateVersion = "26.05";
 }
