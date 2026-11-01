@@ -118,14 +118,16 @@ users.users.yasiru.shell = pkgs.fish;
 #kksdd 
 
 
-services.adguardhome = {
-  enable = true;
-  settings = {
-    http.address = "0.0.0.0:7070";
-    # Allow saving settings via the Web UI
-    schema_version = 20;
+services.pihole-ftl = {
+    enable = true;
+    settings = {
+      schema_version = 23; # Required by the module assertion
+      webserver = {
+        port = "7070";
+        api.password = "YourSecurePasswordHere";
+      };
+    };
   };
-};
 
   # ---------- swap setup ----------
   swapDevices = [
