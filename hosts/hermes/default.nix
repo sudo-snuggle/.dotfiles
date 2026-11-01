@@ -142,5 +142,22 @@ services.pihole-ftl = {
     }
   ];
 
+
+networking = {
+    # Replace 'enp3s0' with your actual interface name
+    interfaces.enp8s0.ipv4.addresses = [ {
+      # Choose an IP outside the range Pi-hole will hand out later
+      address = "192.168.1.9"; 
+      prefixLength = 24; # This is the subnet mask (255.255.255.0)
+    } ];
+
+    # Set the gateway to your router's IP
+    defaultGateway = "192.168.1.1";
+    
+    # Point DNS to Pi-hole (localhost) so the server uses itself
+    nameservers = [ "127.0.0.1" ];
+  };
+
+
   system.stateVersion = "26.05";
 }
