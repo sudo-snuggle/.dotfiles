@@ -176,8 +176,8 @@ virtualisation.oci-containers.containers.odysseus = {
       "--dns=1.1.1.1"
     ];
     capabilities = {
-      NET_ADMIN = "true";
-      NET_RAW = "true";
+      NET_ADMIN = true;
+      NET_RAW = true;
     };
   };
 
