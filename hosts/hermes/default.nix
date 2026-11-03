@@ -21,6 +21,7 @@
     ../../modules/server/copyparty.nix
     ../../modules/laptop/tlp-server.nix
     ../../modules/desktop/wm.nix
+    ../../modules/server/timer.nix
 
   ];
 
