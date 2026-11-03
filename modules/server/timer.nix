@@ -1,38 +1,29 @@
 { pkgs, ... }:
 
 let
-  # Adjust these to match your network setup
   lanSubnet = "192.168.1.0/24"; 
-  wanInterface = "enp3s0"; 
+  wanInterface = "wlp9s0"; # <--- Correct Wi-Fi interface name
 in
 {
-  # Ensure nftables is enabled
-  networking.nftables.enable = true;
-
-  # --- BLOCK WAN SERVICE & TIMER ---
-systemd.services.wan-block = {
-    description = "Block outbound WAN traffic for host and Docker containers while preserving local LAN access";
+  systemd.services.wan-block = {
+    description = "Block outbound WAN traffic for host and Docker over wlp9s0";
     script = ''
-      ${pkgs.nftables}/bin/nft delete table inet wan_block 2>/dev/null || true
-      
-      ${pkgs.nftables}/bin/nft add table inet wan_block
-      
-      # 1. Hook for Host outgoing traffic
-      ${pkgs.nftables}/bin/nft add chain inet wan_block output { type filter hook output priority 0 \; }
-      ${pkgs.nftables}/bin/nft add rule inet wan_block output oifname "lo" accept
-      ${pkgs.nftables}/bin/nft add rule inet wan_block output ip daddr ${lanSubnet} accept
-      ${pkgs.nftables}/bin/nft add rule inet wan_block output drop
+      /run/current-system/sw/bin/iptables -F OUTPUT
+      /run/current-system/sw/bin/iptables -F FORWARD
 
-      # 2. Hook for Docker container forwarded traffic (WAN escape prevention)
-      ${pkgs.nftables}/bin/nft add chain inet wan_block forward { type filter hook forward priority 0 \; }
-      ${pkgs.nftables}/bin/nft add rule inet wan_block forward ip daddr ${lanSubnet} accept
-      ${pkgs.nftables}/bin/nft add rule inet wan_block forward oifname "${wanInterface}" drop
+      # Host Outbound Rules
+      /run/current-system/sw/bin/iptables -A OUTPUT -o lo -j ACCEPT
+      /run/current-system/sw/bin/iptables -A OUTPUT -d ${lanSubnet} -j ACCEPT
+      /run/current-system/sw/bin/iptables -A OUTPUT -o ${wanInterface} -j DROP
+
+      # Docker Container Forward Rules
+      /run/current-system/sw/bin/iptables -A FORWARD -d ${lanSubnet} -j ACCEPT
+      /run/current-system/sw/bin/iptables -A FORWARD -o ${wanInterface} -j DROP
     '';
     serviceConfig.Type = "oneshot";
   };
 
   systemd.timers.wan-block = {
-    description = "Timer to block WAN at 7:00 AM";
     wantedBy = [ "timers.target" ];
     timerConfig = {
       OnCalendar = "*-*-* 07:00:00";
@@ -40,18 +31,16 @@ systemd.services.wan-block = {
     };
   };
 
-  # --- UNBLOCK WAN SERVICE & TIMER ---
   systemd.services.wan-unblock = {
     description = "Restore full outbound internet access";
     script = ''
-      # Remove the custom nftables rule table to unblock WAN
-      ${pkgs.nftables}/bin/nft delete table inet wan_block 2>/dev/null || true
+      /run/current-system/sw/bin/iptables -F OUTPUT
+      /run/current-system/sw/bin/iptables -F FORWARD
     '';
     serviceConfig.Type = "oneshot";
   };
 
   systemd.timers.wan-unblock = {
-    description = "Timer to unblock WAN at 12:10 AM";
     wantedBy = [ "timers.target" ];
     timerConfig = {
       OnCalendar = "*-*-* 00:10:00";
