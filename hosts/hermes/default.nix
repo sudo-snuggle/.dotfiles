@@ -120,15 +120,18 @@ users.users.yasiru.shell = pkgs.fish;
 
 
 services.pihole-ftl = {
-    enable = true;
-    settings = {
-      schema_version = 23;
-      dns.upstreams = [
-        "9.9.9.9"
-        "1.1.1.1"
-      ];
-    };
+  enable = true;
+  settings = {
+    dns.upstreams = [ "9.9.9.9" "1.1.1.1" ];
   };
+  lists = [
+    { url = "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts";
+      type = "block"; enabled = true; description = "StevenBlack unified"; }
+    # optional, heavier list:
+    { url = "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/pro.txt";
+      type = "block"; enabled = true; description = "hagezi pro"; }
+  ];
+};
 
   # Enable the Pi-hole Web UI dashboard on port 7070
   services.pihole-web = {
