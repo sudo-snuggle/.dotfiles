@@ -11,24 +11,22 @@ in
 
   # --- BLOCK WAN SERVICE & TIMER ---
 systemd.services.wan-block = {
-    description = "Block outbound WAN traffic while preserving local LAN access";
+    description = "Block outbound WAN traffic for host and Docker containers while preserving local LAN access";
     script = ''
       ${pkgs.nftables}/bin/nft delete table inet wan_block 2>/dev/null || true
       
       ${pkgs.nftables}/bin/nft add table inet wan_block
+      
+      # 1. Hook for Host outgoing traffic
       ${pkgs.nftables}/bin/nft add chain inet wan_block output { type filter hook output priority 0 \; }
-      
-      # Allow local loopback
       ${pkgs.nftables}/bin/nft add rule inet wan_block output oifname "lo" accept
-      
-      # Allow local LAN subnet destinations
       ${pkgs.nftables}/bin/nft add rule inet wan_block output ip daddr ${lanSubnet} accept
-      
-      # Allow local broadcast / gateway traffic if needed
-      ${pkgs.nftables}/bin/nft add rule inet wan_block output ip daddr 224.0.0.0/4 accept
-      
-      # DROP everything else completely (any non-LAN IP)
       ${pkgs.nftables}/bin/nft add rule inet wan_block output drop
+
+      # 2. Hook for Docker container forwarded traffic (WAN escape prevention)
+      ${pkgs.nftables}/bin/nft add chain inet wan_block forward { type filter hook forward priority 0 \; }
+      ${pkgs.nftables}/bin/nft add rule inet wan_block forward ip daddr ${lanSubnet} accept
+      ${pkgs.nftables}/bin/nft add rule inet wan_block forward oifname "${wanInterface}" drop
     '';
     serviceConfig.Type = "oneshot";
   };
