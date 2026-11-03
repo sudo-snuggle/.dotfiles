@@ -22,20 +22,7 @@
     ../../modules/laptop/fonts.nix
   ];
 
-  # ---------- ryoku desktop ----------
-  programs.ryoku = {
-    enable = true;
-    defaultCompositor = "hyprland"; # Options: "hyprland", "niri"
-    browser = "firefox";           # Options: "firefox", "chromium"
-    shell = "zsh";                 # Options: "zsh", "fish"
-    optionalApps = [
-      "prompt"
-      "fastfetch"
-      "yazi"
-      "cli-tools"
-    ];
-  };
-
+  
   # ---------- boot ----------
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
@@ -124,6 +111,7 @@
     wlr-randr
     nwg-displays
     kanshi
+    supersonic
   ];
 
   # Enable the Virtual KMS display driver

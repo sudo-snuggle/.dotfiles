@@ -59,50 +59,52 @@
       nixosConfigurations = {
 
         # =============== PROTEUS ===============
-        proteus = nixpkgs.lib.nixosSystem {
-          system = "x86_64-linux";
-          specialArgs = { inherit inputs; };
+      proteus = nixpkgs.lib.nixosSystem {
+  system = "x86_64-linux";
+  specialArgs = { inherit inputs; };
 
-          modules = [
-            ./hosts/proteus
-            nur.modules.nixos.default
-            home-manager.nixosModules.home-manager
-            ryoku.nixosModules.default
+  modules = [
+    ./hosts/proteus
+    nur.modules.nixos.default
+    home-manager.nixosModules.home-manager
+    # ryoku.nixosModules.default
 
-            {
-              programs.ryoku = {
-                enable = true;
-                defaultCompositor = "hyprland"; # Options: "hyprland", "niri"
-                browser = "firefox";           # Options: "firefox", "chromium"
-                shell = "zsh";                 # Options: "zsh", "fish"
-                optionalApps = [
-                  "prompt"
-                  "fastfetch"
-                  "yazi"
-                  "cli-tools"
-                ];
-              };
+    # Inline NixOS Module
+    {
+      # programs.ryoku = {
+      #   enable = true;
+      #   defaultCompositor = "hyprland";
+      #   browser = "firefox";
+      #   shell = "zsh";
+      #   optionalApps = [
+      #     "prompt"
+      #     "fastfetch"
+      #     "yazi"
+      #     "cli-tools"
+      #   ];
+      # };
 
-              home-manager = {
-                useGlobalPkgs = true;
-                useUserPackages = true;
-                backupFileExtension = "backup";
-                extraSpecialArgs = { inherit inputs; };
-                users.yasiru = import ./hosts/proteus/home.nix;
-              };
-            }
+      home-manager = {
+        useGlobalPkgs = true;
+        useUserPackages = true;
+        backupFileExtension = "backup";
+        extraSpecialArgs = { inherit inputs; };
+        users.yasiru = import ./hosts/proteus/home.nix;
+      };
+    } # <-- This closing brace was missing!
 
-            (
-              { pkgs, ... }:
-              {
-                environment.systemPackages = [
-                  inputs.freesm.packages.${pkgs.system}.freesmlauncher
-                  inputs.helium.packages.${pkgs.system}.default
-                ];
-              }
-            )
-          ];
-        };
+    # Inline package injection module
+    (
+      { pkgs, ... }:
+      {
+        environment.systemPackages = [
+          inputs.freesm.packages.${pkgs.system}.freesmlauncher
+          inputs.helium.packages.${pkgs.system}.default
+        ];
+      }
+    )
+  ];
+};
 
         # =============== AENEAS ===============
         
