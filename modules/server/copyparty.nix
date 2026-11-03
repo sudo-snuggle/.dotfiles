@@ -207,6 +207,23 @@ virtualisation.oci-containers.containers.odysseus = {
     ];
   };
 
+  virtualisation.oci-containers.containers.netdata = {
+    image = "netdata/netdata:latest";
+    extraOptions = [
+      "--pid=host"
+      "--network=host"
+      "--privileged"
+    ];
+    volumes = [
+      "/etc/passwd:/host/etc/passwd:ro"
+      "/etc/group:/host/etc/group:ro"
+      "/etc/localtime:/etc/localtime:ro"
+      "/proc:/host/proc:ro"
+      "/sys:/host/sys:ro"
+      "/var/run/docker.sock:/var/run/docker.sock:ro"
+    ];
+  };
+
 
 
 
