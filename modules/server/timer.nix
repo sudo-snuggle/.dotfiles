@@ -10,24 +10,25 @@ in
   networking.nftables.enable = true;
 
   # --- BLOCK WAN SERVICE & TIMER ---
-  systemd.services.wan-block = {
+systemd.services.wan-block = {
     description = "Block outbound WAN traffic while preserving local LAN access";
     script = ''
-      # Clear existing rules in our custom table if present
       ${pkgs.nftables}/bin/nft delete table inet wan_block 2>/dev/null || true
       
-      # Create table and output hook
       ${pkgs.nftables}/bin/nft add table inet wan_block
       ${pkgs.nftables}/bin/nft add chain inet wan_block output { type filter hook output priority 0 \; }
       
-      # Allow local loopback traffic
+      # Allow local loopback
       ${pkgs.nftables}/bin/nft add rule inet wan_block output oifname "lo" accept
       
-      # Allow local LAN traffic
+      # Allow local LAN subnet destinations
       ${pkgs.nftables}/bin/nft add rule inet wan_block output ip daddr ${lanSubnet} accept
       
-      # Drop all other outbound internet traffic on physical interface
-      ${pkgs.nftables}/bin/nft add rule inet wan_block output oifname "${wanInterface}" drop
+      # Allow local broadcast / gateway traffic if needed
+      ${pkgs.nftables}/bin/nft add rule inet wan_block output ip daddr 224.0.0.0/4 accept
+      
+      # DROP everything else completely (any non-LAN IP)
+      ${pkgs.nftables}/bin/nft add rule inet wan_block output drop
     '';
     serviceConfig.Type = "oneshot";
   };
