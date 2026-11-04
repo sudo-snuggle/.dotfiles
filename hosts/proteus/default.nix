@@ -60,7 +60,7 @@
   virtualisation.waydroid.package = pkgs.waydroid-nftables;
 
   services.sunshine = {
-    enable = false;
+    enable = true;
     autoStart = false;
     capSysAdmin = true; # Needed for input/display capture permissions on Linux
   };
