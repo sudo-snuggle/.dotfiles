@@ -117,7 +117,8 @@ users.users.yasiru.shell = pkgs.fish;
   };
 
 #kksdd 
-
+virtualisation.waydroid.enable = true;
+virtualisation.waydroid.package = pkgs.waydroid-nftables;
 
 services.pihole-ftl = {
   enable = true;
