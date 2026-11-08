@@ -288,12 +288,36 @@ virtualisation.oci-containers.containers.siyuan = {
       "/var/lib/onlyoffice/data:/var/www/onlyoffice/Data"
     ];
   };
+   #set nc (docker ps --filter "name=nextcloud" --format "{{.Names}}" | head -n 1); and docker exec -u www-data $nc php occ config:system:set allow_local_remote_servers --value=true --type=boolean; or docker exec $nc occ config:system:set allow_local_remote_servers --value=true --type=boolean
 
 
 
 
 
+virtualisation.oci-containers.backend = "docker"; # or "podman"
+  
+  virtualisation.oci-containers.containers.qbittorrent = {
+    image = "lscr.io/linuxserver/qbittorrent:latest";
+    autoStart = true;
+    ports = [
+      "8080:8080"
+      "6881:6881"
+      "6881:6881/udp"
+    ];
+    environment = {
+      PUID = "1000";
+      PGID = "1000";
+      TZ = "Asia/Colombo";
+      WEBUI_PORT = "8080";
+    };
+    volumes = [
+      "/var/lib/qbittorrent/config:/config"
+      "/path/to/your/downloads:/downloads"
+    ];
+  };
 
+  networking.firewall.allowedTCPPorts = [ 8080 6881 ];
+  networking.firewall.allowedUDPPorts = [ 6881 ];
 
 
 
