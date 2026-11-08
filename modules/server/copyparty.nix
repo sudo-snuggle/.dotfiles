@@ -233,9 +233,6 @@ virtualisation.oci-containers.containers.odysseus = {
 
 
 
-{ config, pkgs, ... }:
-
-{
   virtualisation.oci-containers.containers = {
     nextcloud_db = {
       image = "postgres:15-alpine";
@@ -267,8 +264,6 @@ virtualisation.oci-containers.containers.odysseus = {
     };
   };
 
-  networking.firewall.allowedTCPPorts = [ 6060 ];
-}
 
 
 
