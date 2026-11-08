@@ -225,6 +225,20 @@ virtualisation.oci-containers.containers.odysseus = {
   };
 
 
+virtualisation.oci-containers.containers.silverbullet = {
+    image = "ghcr.io/silverbulletmd/silverbullet:latest"; #
+    ports = [
+      "3000:3000" #
+    ];
+    volumes = [
+      "/home/yasiru/docker/silverbullet/space:/space" #
+    ];
+    #  uncomment to require a login
+    # environment = {
+    #   SB_USER = "yasiru:-password";
+    # };
+  };
+
 
 
 
