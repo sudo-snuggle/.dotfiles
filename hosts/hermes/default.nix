@@ -139,13 +139,15 @@ services.pihole-ftl = {
     enable = true;
     ports = [ "7070" ];
   };
-  # ---------- swap setup ----------
-  swapDevices = [
-    {
-      device = "/var/lib/swapfile";
-      size = 4096; # 4GB Swapfile
-    }
-  ];
+
+  
+  nix.gc = {
+  automatic = true;
+  dates = "weekly";
+  options = "--delete-older-than 7d";
+};
+
+nix.settings.auto-optimise-store = true;
 
   system.stateVersion = "26.05";
 }

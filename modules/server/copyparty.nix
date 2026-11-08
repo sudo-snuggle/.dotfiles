@@ -1,20 +1,22 @@
 { config, pkgs, ... }:
 
 {
-  virtualisation.oci-containers.backend = "docker";
-
-  virtualisation.oci-containers.containers.copyparty = {
+virtualisation.oci-containers.containers.copyparty = {
     image = "copyparty/ac:latest";
     ports = [
       "130:3923"
     ];
     volumes = [
-      "/home/yasiru:/w:rw"
+      "/home/yasiru/Documents:/w/Documents:rw"
+      "/home/yasiru/Downloads:/w/Downloads:rw"
+      "/home/yasiru/Music:/w/Music:rw"
+      "/home/yasiru/Pictures:/w/Pictures:rw"
+      "/home/yasiru/Videos:/w/Videos:rw"
+      "/home/yasiru/.dotfiles:/w/.dotfiles:rw"
     ];
-    # Note -  spaces separate elements in nix lists, NOt commas
     cmd = [
       "-v"
-      "/w::rwm"
+      "/w::rwmd"
     ];
   };
 
