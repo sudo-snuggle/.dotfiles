@@ -233,7 +233,42 @@ virtualisation.oci-containers.containers.odysseus = {
 
 
 
+{ config, pkgs, ... }:
 
+{
+  virtualisation.oci-containers.containers = {
+    nextcloud_db = {
+      image = "postgres:15-alpine";
+      environment = {
+        POSTGRES_DB = "nextcloud";
+        POSTGRES_USER = "nextcloud";
+        POSTGRES_PASSWORD = "local_database_password_change_me";
+      };
+      volumes = [
+        "/var/lib/nextcloud/db:/var/lib/postgresql/data"
+      ];
+    };
+
+    nextcloud = {
+      image = "nextcloud:apache";
+      ports = [ "6060:80" ];
+      environment = {
+        POSTGRES_HOST = "nextcloud_db";
+        POSTGRES_DB = "nextcloud";
+        POSTGRES_USER = "nextcloud";
+        POSTGRES_PASSWORD = "local_database_password_change_me";
+        # Disables forced HTTPS redirects so plain LAN IP access works smoothly
+        OVERWRITEPROTOCOL = "http";
+      };
+      volumes = [
+        "/var/lib/nextcloud/data:/var/www/html"
+      ];
+      dependsOn = [ "nextcloud_db" ];
+    };
+  };
+
+  networking.firewall.allowedTCPPorts = [ 6060 ];
+}
 
 
 
