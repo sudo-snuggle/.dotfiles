@@ -231,19 +231,6 @@ virtualisation.oci-containers.containers.odysseus = {
 
 
 
-systemd.services.init-nextcloud-network = {
-    description = "Create Docker network for Nextcloud";
-    after = [ "docker.service" ];
-    requires = [ "docker.service" ];
-    wantedBy = [ "multi-user.target" ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-      ExecStart = "${pkgs.docker}/bin/docker network create nextcloud-net || true";
-    };
-  };
-
-
 
   systemd.services.init-nextcloud-network = {
     description = "Create Docker network for Nextcloud";
