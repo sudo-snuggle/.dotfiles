@@ -231,11 +231,24 @@ virtualisation.oci-containers.containers.odysseus = {
 
 
 
+systemd.services.init-nextcloud-network = {
+    description = "Create Docker network for Nextcloud";
+    after = [ "docker.service" ];
+    requires = [ "docker.service" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = "${pkgs.docker}/bin/docker network create nextcloud-net || true";
+    };
+  };
 
+  
 
   virtualisation.oci-containers.containers = {
     nextcloud_db = {
       image = "postgres:15-alpine";
+      extraOptions = [ "--network=nextcloud-net" ];
       environment = {
         POSTGRES_DB = "nextcloud";
         POSTGRES_USER = "nextcloud";
@@ -249,12 +262,12 @@ virtualisation.oci-containers.containers.odysseus = {
     nextcloud = {
       image = "nextcloud:apache";
       ports = [ "6060:80" ];
+      extraOptions = [ "--network=nextcloud-net" ];
       environment = {
         POSTGRES_HOST = "nextcloud_db";
         POSTGRES_DB = "nextcloud";
         POSTGRES_USER = "nextcloud";
         POSTGRES_PASSWORD = "local_database_password_change_me";
-        # Disables forced HTTPS redirects so plain LAN IP access works smoothly
         OVERWRITEPROTOCOL = "http";
       };
       volumes = [
@@ -263,7 +276,6 @@ virtualisation.oci-containers.containers.odysseus = {
       dependsOn = [ "nextcloud_db" ];
     };
   };
-
 
 
 

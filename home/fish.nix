@@ -65,12 +65,14 @@
         echo "✓ $host deployed and pushed"
     '';
 
-    deploy-hermes = ''
+ deploy-hermes = ''
     set host hermes
     set target_dir ~/.dotfiles/hosts/$host
     cd ~/.dotfiles
 
-    echo "→ pulling latest..."
+    echo "→ resetting and pulling latest from GitHub..."
+    git reset --hard HEAD
+    git clean -fd
     git pull --rebase
 
     echo "→ copying hardware-configuration.nix..."
@@ -102,7 +104,7 @@
     rm -f $target_dir/hardware-configuration.nix
 
     echo "✓ $host deployed"
-'';
+''
 
 
     push-proteus = ''
