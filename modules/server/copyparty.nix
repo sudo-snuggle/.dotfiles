@@ -243,7 +243,22 @@ systemd.services.init-nextcloud-network = {
     };
   };
 
-  
+
+{
+  systemd.services.init-nextcloud-network = {
+    description = "Create Docker network for Nextcloud";
+    after = [ "docker.service" ];
+    requires = [ "docker.service" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      ${pkgs.docker}/bin/docker network inspect nextcloud-net >/dev/null 2>&1 || \
+      ${pkgs.docker}/bin/docker network create nextcloud-net
+    '';
+  };
 
   virtualisation.oci-containers.containers = {
     nextcloud_db = {
@@ -276,7 +291,6 @@ systemd.services.init-nextcloud-network = {
       dependsOn = [ "nextcloud_db" ];
     };
   };
-
 
 
 
