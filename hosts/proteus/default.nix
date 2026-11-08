@@ -95,6 +95,13 @@
     "vm.dirty_expire_centisecs" = 3000;
   };
 
+services.printing = {
+  enable = true;
+  drivers = [
+    pkgs.epson-escpr  # This provides the necessary filter/driver for L-series printers
+  ];
+};
+
   # ---------- packages ----------
   environment.systemPackages = with pkgs; [
     linuxPackages.cpupower
