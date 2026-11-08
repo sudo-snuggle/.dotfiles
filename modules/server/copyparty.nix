@@ -300,7 +300,7 @@ virtualisation.oci-containers.containers.siyuan = {
     image = "lscr.io/linuxserver/qbittorrent:latest";
     autoStart = true;
     ports = [
-      "8080:8080"
+      "260:8080"
       "6881:6881"
       "6881:6881/udp"
     ];
