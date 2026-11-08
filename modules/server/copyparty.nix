@@ -251,8 +251,9 @@ virtualisation.oci-containers.containers.lidarr = {
     };
     volumes = [
       "/var/lib/lidarr/config:/config"
-      "/path/to/your/music:/music"
-      "/path/to/your/downloads:/downloads"
+      "/home/yasiru/Downloads:/Downloads"
+      "/home/yasiru/Music:/Music"
+      
     ];
   };
 
@@ -311,7 +312,9 @@ virtualisation.oci-containers.containers.siyuan = {
     };
     volumes = [
       "/var/lib/qbittorrent/config:/config"
-      "/path/to/your/downloads:/downloads"
+      "/home/yasiru/Downloads:/Downloads"
+      "/home/yasiru/Music:/Music"
+      
     ];
   };
 
