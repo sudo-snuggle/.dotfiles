@@ -2,8 +2,7 @@
 
 {
 virtualisation.oci-containers.containers.copyparty = {
-    image = "copyparty/ac:latest";
-    ports = [
+image = "docker.io/copyparty/ac:latest";    ports = [
       "130:3923"
     ];
     volumes = [
