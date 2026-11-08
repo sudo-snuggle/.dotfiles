@@ -240,6 +240,41 @@ virtualisation.oci-containers.containers.silverbullet = {
   };
 
 
+virtualisation.oci-containers.containers.lidarr = {
+    image = "lscr.io/linuxserver/lidarr:latest";
+    autoStart = true;
+    ports = [ "8686:8686" ];
+    environment = {
+      PUID = "1000";
+      PGID = "1000";
+      TZ = "Asia/Colombo";
+    };
+    volumes = [
+      "/var/lib/lidarr/config:/config"
+      "/path/to/your/music:/music"
+      "/path/to/your/downloads:/downloads"
+    ];
+  };
+
+
+
+  virtualisation.oci-containers.containers.onlyoffice = {
+    image = "onlyoffice/documentserver:latest";
+    autoStart = true;
+    ports = [ "8088:80" ];
+    environment = {
+      TZ = "Asia/Colombo";
+      JWT_ENABLED = "true";
+      JWT_SECRET = "change-this-to-a-long-random-string";
+    };
+    volumes = [
+      "/var/lib/onlyoffice/logs:/var/log/onlyoffice"
+      "/var/lib/onlyoffice/data:/var/www/onlyoffice/Data"
+    ];
+  };
+
+
+
 
 
 
