@@ -244,7 +244,7 @@ systemd.services.init-nextcloud-network = {
   };
 
 
-{
+
   systemd.services.init-nextcloud-network = {
     description = "Create Docker network for Nextcloud";
     after = [ "docker.service" ];
