@@ -268,12 +268,15 @@ virtualisation.oci-containers.containers.siyuan = {
     volumes = [
       "/var/lib/siyuan/workspace:/siyuan/workspace"
     ];
+    # Pass arguments explicitly as command-line flags to the image entrypoint
     cmd = [
-      "--workspace=/siyuan/workspace/"
+      "--workspace=/siyuan/workspace"
       "--accessAuthCode=change-this-to-your-password"
+      "--server=0.0.0.0:6806"
     ];
   };
 
+  
   virtualisation.oci-containers.containers.onlyoffice = {
     image = "onlyoffice/documentserver:latest";
     autoStart = true;
