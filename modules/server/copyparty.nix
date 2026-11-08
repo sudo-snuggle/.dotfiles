@@ -256,7 +256,23 @@ virtualisation.oci-containers.containers.lidarr = {
     ];
   };
 
-
+virtualisation.oci-containers.containers.siyuan = {
+    image = "b3log/siyuan:latest";
+    autoStart = true;
+    ports = [ "6806:6806" ];
+    environment = {
+      TZ = "Asia/Colombo";
+      PUID = "1000";
+      PGID = "1000";
+    };
+    volumes = [
+      "/var/lib/siyuan/workspace:/siyuan/workspace"
+    ];
+    cmd = [
+      "--workspace=/siyuan/workspace/"
+      "--accessAuthCode=change-this-to-your-password"
+    ];
+  };
 
   virtualisation.oci-containers.containers.onlyoffice = {
     image = "onlyoffice/documentserver:latest";
