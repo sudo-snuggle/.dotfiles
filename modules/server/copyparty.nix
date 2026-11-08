@@ -228,7 +228,7 @@ virtualisation.oci-containers.containers.odysseus = {
 virtualisation.oci-containers.containers.silverbullet = {
     image = "ghcr.io/silverbulletmd/silverbullet:latest"; #
     ports = [
-      "3000:3000" #
+      "250:3000" #
     ];
     volumes = [
       "/home/yasiru/docker/silverbullet/space:/space" #
