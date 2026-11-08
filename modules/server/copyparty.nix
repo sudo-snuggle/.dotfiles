@@ -264,19 +264,16 @@ virtualisation.oci-containers.containers.siyuan = {
       TZ = "Asia/Colombo";
       PUID = "1000";
       PGID = "1000";
+      # Pass configuration via environment variables instead of command-line flags
+      SIYUAN_ACCESS_AUTH_CODE = "change-this-to-your-password";
+      SIYUAN_WORKSPACE = "/siyuan/workspace";
     };
     volumes = [
       "/var/lib/siyuan/workspace:/siyuan/workspace"
     ];
-    # Pass arguments explicitly as command-line flags to the image entrypoint
-    cmd = [
-      "--workspace=/siyuan/workspace"
-      "--accessAuthCode=change-this-to-your-password"
-      "--server=0.0.0.0:6806"
-    ];
   };
 
-  
+
   virtualisation.oci-containers.containers.onlyoffice = {
     image = "onlyoffice/documentserver:latest";
     autoStart = true;
