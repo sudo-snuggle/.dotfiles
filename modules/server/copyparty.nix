@@ -294,7 +294,6 @@ virtualisation.oci-containers.containers.siyuan = {
 
 
 
-virtualisation.oci-containers.backend = "docker"; # or "podman"
   
   virtualisation.oci-containers.containers.qbittorrent = {
     image = "lscr.io/linuxserver/qbittorrent:latest";
