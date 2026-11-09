@@ -379,7 +379,7 @@ virtualisation.oci-containers = {
     containers.obsidian = {
       image = "lscr.io/linuxserver/obsidian:latest";
       autoStart = false;
-     ports = [
+      ports = [
         "3000:3000"
         "3001:3001"
       ];
@@ -393,16 +393,15 @@ virtualisation.oci-containers = {
         TZ = "Asia/Colombo";
         LIBVA_DRIVER_NAME = "i965";
         LIBGL_ALWAYS_SOFTWARE = "1";
+        DRINODE = "/dev/dri/renderD128";
       };
-     extraOptions = [
+      extraOptions = [
         "--security-opt=seccomp=unconfined"
         "--shm-size=1gb"
-        "--device=/dev/dri:/dev/dri"
+        "--device=/dev/dri/renderD128:/dev/dri/renderD128"
       ];
     };
   };
-
-
 
 
 #--------auto start thing ----------------------
