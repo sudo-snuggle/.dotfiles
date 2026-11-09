@@ -375,7 +375,27 @@ virtualisation.oci-containers.containers.siyuan = {
   };
 
 
-
+virtualisation.oci-containers = {
+    backend = "docker"; # or "podman"
+    containers.obsidian = {
+      image = "lscr.io/linuxserver/obsidian:latest";
+      autoStart = false;
+      ports = [ "240:3000" ];
+      volumes = [
+        "/var/lib/obsidian-config:/config"
+        "/home/yasiru/Documents/obsidian:/config/vault"
+      ];
+      environment = {
+        PUID = "1000";
+        PGID = "1000";
+        TZ = "Asia/Colombo";
+      };
+      extraOptions = [
+        "--security-opt=seccomp=unconfined"
+        "--shm-size=1gb"
+      ];
+    };
+  };
 
 
 
