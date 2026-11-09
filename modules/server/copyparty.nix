@@ -376,7 +376,6 @@ virtualisation.oci-containers.containers.siyuan = {
 
 
 virtualisation.oci-containers = {
-    backend = "docker"; # or "podman"
     containers.obsidian = {
       image = "lscr.io/linuxserver/obsidian:latest";
       autoStart = false;
