@@ -379,7 +379,10 @@ virtualisation.oci-containers = {
     containers.obsidian = {
       image = "lscr.io/linuxserver/obsidian:latest";
       autoStart = false;
-       ports = [ "3000:3000" ];
+     ports = [
+        "3000:3000"
+        "3001:3001"
+      ];
       volumes = [
         "/var/lib/obsidian-config:/config"
         "/home/yasiru/Documents/obsidian:/config/vault"
