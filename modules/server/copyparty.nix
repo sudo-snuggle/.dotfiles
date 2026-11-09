@@ -392,11 +392,10 @@ virtualisation.oci-containers = {
         PGID = "1000";
         TZ = "Asia/Colombo";
       };
-      extraOptions = [
+     extraOptions = [
         "--security-opt=seccomp=unconfined"
         "--shm-size=1gb"
-        "--device=/dev/dri/renderD128"
-        "--device=/dev/dri/card0"
+        "--device=/dev/dri:/dev/dri"
       ];
     };
   };
