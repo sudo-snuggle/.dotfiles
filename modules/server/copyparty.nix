@@ -1,6 +1,9 @@
 { config, pkgs, ... }:
 
 {
+
+virtualisation.oci-containers.backend = "docker";
+
 virtualisation.oci-containers.containers.copyparty = {
 image = "docker.io/copyparty/ac:latest";    ports = [
       "130:3923"
