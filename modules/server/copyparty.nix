@@ -391,14 +391,14 @@ virtualisation.oci-containers = {
         PUID = "1000";
         PGID = "1000";
         TZ = "Asia/Colombo";
-        LIBVA_DRIVER_NAME = "i965";
-        LIBGL_ALWAYS_SOFTWARE = "1";
-        DRINODE = "/dev/dri/renderD128";
+        #LIBVA_DRIVER_NAME = "i965";
+        #LIBGL_ALWAYS_SOFTWARE = "1";
+        #DRINODE = "/dev/dri/renderD128";
       };
       extraOptions = [
         "--security-opt=seccomp=unconfined"
         "--shm-size=1gb"
-        "--device=/dev/dri/renderD128:/dev/dri/renderD128"
+        #"--device=/dev/dri/renderD128:/dev/dri/renderD128"
       ];
     };
   };
