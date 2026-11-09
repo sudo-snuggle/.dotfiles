@@ -391,6 +391,7 @@ virtualisation.oci-containers = {
         PUID = "1000";
         PGID = "1000";
         TZ = "Asia/Colombo";
+        LIBVA_DRIVER_NAME = "i965";
       };
      extraOptions = [
         "--security-opt=seccomp=unconfined"
