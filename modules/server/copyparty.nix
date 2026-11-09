@@ -395,6 +395,8 @@ virtualisation.oci-containers = {
       extraOptions = [
         "--security-opt=seccomp=unconfined"
         "--shm-size=1gb"
+        "--device=/dev/dri/renderD128"
+        "--device=/dev/dri/card0"
       ];
     };
   };
