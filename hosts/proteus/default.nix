@@ -53,6 +53,7 @@
       pavucontrol
       #librewolf
       sunshine
+      anki
     ];
   };
 
