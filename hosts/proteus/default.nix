@@ -42,7 +42,7 @@
   users.users.yasiru = {
     isNormalUser = true;
     description = "yasiru";
-    extraGroups = [ "networkmanager" "wheel" "libvirtd" "input" ];
+    extraGroups = [ "networkmanager" "wheel" "libvirtd" "input" "scanner"];
     packages = with pkgs; [
       #tree
       vscodium
@@ -102,6 +102,11 @@ services.printing = {
   ];
 };
 
+hardware.sane = {
+  enable = true;
+  extraBackends = [ pkgs.epsonscan2 ];
+};
+
   # ---------- packages ----------
   environment.systemPackages = with pkgs; [
     linuxPackages.cpupower
@@ -119,6 +124,9 @@ services.printing = {
     nwg-displays
     kanshi
     supersonic
+    
+    simple-scan
+    
   ];
 
   # Enable the Virtual KMS display driver

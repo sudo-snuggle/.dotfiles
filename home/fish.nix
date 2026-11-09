@@ -104,7 +104,7 @@
     rm -f $target_dir/hardware-configuration.nix
 
     echo "✓ $host deployed"
-''
+'';
 
 
     push-proteus = ''

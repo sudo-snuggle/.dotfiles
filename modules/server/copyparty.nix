@@ -378,7 +378,7 @@ virtualisation.oci-containers.containers.siyuan = {
 virtualisation.oci-containers = {
     containers.obsidian = {
       image = "lscr.io/linuxserver/obsidian:latest";
-      autoStart = false;
+      autoStart = true;
       ports = [
         "3000:3000"
         "3001:3001"
