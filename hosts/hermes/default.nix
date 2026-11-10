@@ -106,6 +106,7 @@ users.users.yasiru.shell = pkgs.fish;
   jellyfin-media-player
   kdePackages.plasma-bigscreen
   kdePackages.plasma-desktop
+  vacuumtube
    
 # Kodi with Jellyfin plugin pre-packaged
   (kodi.passthru.withPackages (kodiPkgs: with kodiPkgs; [
