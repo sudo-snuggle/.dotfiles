@@ -76,6 +76,11 @@ services.pipewire = {
   pulse.enable = true;
 };
 
+systemd.user.services.wireplumber = {
+  after = [ "basic.target" ];
+  wantedBy = [ "default.target" ];
+};
+
 
   # ---------- docker virtualisation ----------
   virtualisation.docker = {
