@@ -29,6 +29,7 @@
   boot.kernelParams = [
     "consoleblank=60"          # Turns off screen after 60s of inactivity
     "button.lid_init_state=open" # Ignores lid close state on startup
+    "video=eDP-1:d" "video=HDMI-A-1:1920x1080@60"
   ];
 
   # ---------- networking ----------
