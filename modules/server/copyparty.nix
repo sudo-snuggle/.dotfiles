@@ -211,23 +211,6 @@ virtualisation.oci-containers.containers.odysseus = {
     ];
   };
 
-  virtualisation.oci-containers.containers.netdata = {
-    image = "netdata/netdata:latest";
-    extraOptions = [
-      "--pid=host"
-      "--network=host"
-      "--privileged"
-    ];
-    volumes = [
-      "/etc/passwd:/host/etc/passwd:ro"
-      "/etc/group:/host/etc/group:ro"
-      "/etc/localtime:/etc/localtime:ro"
-      "/proc:/host/proc:ro"
-      "/sys:/host/sys:ro"
-      "/var/run/docker.sock:/var/run/docker.sock:ro"
-    ];
-  };
-
 
 virtualisation.oci-containers.containers.silverbullet = {
     image = "ghcr.io/silverbulletmd/silverbullet:latest"; #
@@ -277,27 +260,6 @@ virtualisation.oci-containers.containers.siyuan = {
       "/var/lib/siyuan/workspace:/siyuan/workspace"
     ];
   };
-
-
-  virtualisation.oci-containers.containers.onlyoffice = {
-    image = "onlyoffice/documentserver:latest";
-    autoStart = true;
-    ports = [ "8088:80" ];
-    environment = {
-      TZ = "Asia/Colombo";
-      JWT_ENABLED = "true";
-      JWT_SECRET = "change-this-to-a-long-random-string";
-    };
-    volumes = [
-      "/var/lib/onlyoffice/logs:/var/log/onlyoffice"
-      "/var/lib/onlyoffice/data:/var/www/onlyoffice/Data"
-    ];
-  };
-   #set nc (docker ps --filter "name=nextcloud" --format "{{.Names}}" | head -n 1); and docker exec -u www-data $nc php occ config:system:set allow_local_remote_servers --value=true --type=boolean; or docker exec $nc occ config:system:set allow_local_remote_servers --value=true --type=boolean
-
-
-
-
 
   
   virtualisation.oci-containers.containers.qbittorrent = {

@@ -145,6 +145,11 @@ services.pihole-ftl = {
     ports = [ "7070" ];
   };
 
+  systemd.services.pihole-ftl = {
+  after = [ "network-online.target" ];
+  wants = [ "network-online.target" ];
+};
+
   
   nix.gc = {
   automatic = true;
