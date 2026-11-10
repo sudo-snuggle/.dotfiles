@@ -4,7 +4,7 @@
   users.users.yasiru = {
     isNormalUser = true;
     description = "yasiru";
-    extraGroups = [ "networkmanager" "wheel" "libvirtd" "wheel" "video" "input" "docker"];
+    extraGroups = [ "networkmanager" "wheel" "libvirtd" "wheel" "video" "input" "docker"  "audio" ];
   };
 
 
