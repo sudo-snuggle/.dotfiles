@@ -123,7 +123,11 @@ virtualisation.waydroid.package = pkgs.waydroid-nftables;
 services.pihole-ftl = {
   enable = true;
   settings = {
-    dns.upstreams = [ "9.9.9.9" "1.1.1.1" ];
+    dns = {
+      upstreams = [ "9.9.9.9" "1.1.1.1" ];
+      listeningMode = "BIND";
+      interface = "wlp9s0";
+    };
   };
   lists = [
     { url = "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts";
