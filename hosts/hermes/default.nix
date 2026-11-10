@@ -31,10 +31,30 @@
     "button.lid_init_state=open" # Ignores lid close state on startup
     "video=eDP-1:d" "video=HDMI-A-1:1920x1080@60"
   ];
-
-  # ---------- networking ----------
+# ---------- networking ----------
   networking.hostName = "hermes";
   networking.networkmanager.enable = true;
+
+  networking.networkmanager.ensureProfiles.profiles."Dialog 4G 454" = {
+    connection = {
+      id = "Dialog 4G 454";
+      type = "wifi";
+    };
+    wifi = {
+      ssid = "Dialog 4G 454";
+      mode = "infrastructure";
+    };
+    wifi-security = {
+      key-mgmt = "wpa-psk";
+      psk = "2fB5740B";
+    };
+    ipv4 = {
+      method = "manual";
+      address1 = "192.168.8.9/24,192.168.8.1";
+      dns = "127.0.0.1;";
+      ignore-auto-dns = "true";
+    };
+  };
 
   # ---------- tailscale (secure mesh VPN) ----------
   # Uncomment when ready for encrypted remote access:
