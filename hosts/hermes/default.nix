@@ -70,6 +70,12 @@
   programs.fish.enable = true;
 users.users.yasiru.shell = pkgs.fish;
 
+services.pipewire = {
+  enable = true;
+  alsa.enable = true;
+  pulse.enable = true;
+};
+
 
   # ---------- docker virtualisation ----------
   virtualisation.docker = {
@@ -80,7 +86,7 @@ users.users.yasiru.shell = pkgs.fish;
     };
   };
 
-  
+
   services.flatpak.enable = true;
 
   # ---------- essential server packages ----------
@@ -156,7 +162,7 @@ services.pihole-ftl = {
   lists = [
     { url = "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts";
       type = "block"; enabled = true; description = "StevenBlack unified"; }
-    # optional, heavier list:
+    #  heavier list:
     { url = "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/pro.txt";
       type = "block"; enabled = true; description = "hagezi pro"; }
   ];
