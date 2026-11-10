@@ -80,6 +80,9 @@ users.users.yasiru.shell = pkgs.fish;
     };
   };
 
+  
+  services.flatpak.enable = true;
+
   # ---------- essential server packages ----------
   environment.systemPackages = with pkgs; [
     # Server Management & Hardware
@@ -106,7 +109,6 @@ users.users.yasiru.shell = pkgs.fish;
   jellyfin-media-player
   kdePackages.plasma-bigscreen
   kdePackages.plasma-desktop
-  vacuumtube
    
 # Kodi with Jellyfin plugin pre-packaged
   (kodi.passthru.withPackages (kodiPkgs: with kodiPkgs; [
