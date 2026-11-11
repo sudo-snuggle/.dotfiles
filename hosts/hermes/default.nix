@@ -118,8 +118,6 @@ systemd.user.services.wireplumber = {
   libcec
 
   jellyfin-media-player
-  kdePackages.plasma-bigscreen
-  kdePackages.plasma-desktop
    
 # Kodi with Jellyfin plugin pre-packaged
   (kodi.passthru.withPackages (kodiPkgs: with kodiPkgs; [
