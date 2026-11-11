@@ -124,7 +124,21 @@
 
     yt = "WLR_DRM_NO_ATOMIC=1 WLR_BACKENDS=libinput,drm WLR_DRM_DEVICES=/dev/dri/card1 cage -- flatpak run rocks.shy.VacuumTube --fullscreen";
 
+toggle-audio = {
+    description = "Toggle audio output between laptop speakers and TV HDMI";
+    body = ''
+      set -l hdmi_sink "alsa_output.pci-0000_00_03.0.hdmi-stereo"
+      set -l laptop_sink "alsa_output.pci-0000_00_1b.0.analog-stereo"
+      set -l current (pactl get-default-sink)
 
+      if test "$current" = "$hdmi_sink"
+        pactl set-default-sink "$laptop_sink"
+        echo "Audio -> Laptop Speakers"
+      else
+        pactl set-default-sink "$hdmi_sink"
+        echo "Audio -> TV (HDMI)"
+      end
+    '';
     };
   };
 }
