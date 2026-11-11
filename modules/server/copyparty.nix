@@ -380,6 +380,10 @@ virtualisation.oci-containers = {
       environment = {
         TZ = "Asia/Colombo";
       };
+      extraOptions = [
+    "--dns=8.8.8.8"
+    "--dns=1.1.1.1"
+  ];
     };
   };
 
