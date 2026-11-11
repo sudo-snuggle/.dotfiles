@@ -28,7 +28,7 @@ virtualisation.oci-containers.containers.pinchflat = {
   ports = [ "190:8945" ];
  volumes = [
     "/home/yasiru/docker/pinchflat-config:/config"
-    "/home/yasiru/pinchflat:/downloads"
+    "/home/yasiru/Videos/channels:/downloads"
   ];
   environment = {
     TZ = "Asia/Colombo";
@@ -52,8 +52,9 @@ virtualisation.oci-containers.containers.jellyfin = {
     "/home/yasiru/docker/jellyfin/cache:/cache"
     
     # 2. Media Folders (Read-Write)
-    "/home/yasiru/Videos:/media:rw"
-    "/home/yasiru/pinchflat:/pinchflat:rw"
+    "/home/yasiru/Videos/avg:/media:rw"
+    "/home/yasiru/Videos/360:/360:rw"
+    "/home/yasiru/Videos/channels:/channels:rw"
   ];
   environment = {
     PUID = "1000";
@@ -158,7 +159,7 @@ virtualisation.oci-containers.containers.odysseus = {
       "140:8081"
     ];
     volumes = [
-      "/home/yasiru/Videos:/downloads"
+      "/home/yasiru/Videos/avg:/downloads"
     ];
     environment = {
       DEFAULT_OPTION_AUTO_START = "false";
@@ -365,6 +366,33 @@ virtualisation.oci-containers = {
     };
   };
 
+{
+  virtualisation.oci-containers = {
+    backend = "docker";
+    containers.ytptube = {
+      image = "ghcr.io/arabcoders/ytptube:latest";
+      autoStart = true;
+      user = "1000:1000"; # Matches yasiru's UID/GID so Jellyfin/host can read downloads
+      ports = [ "270:8081" ];
+      volumes = [
+        "/var/lib/ytptube/config:/config:rw"
+        "/home/yasiru/Videos/360:/downloads:rw"
+      ];
+      environment = {
+        TZ = "Asia/Colombo";
+      };
+    };
+  };
+
+  # Ensure directories exist with 1000:1000 ownership so Docker doesn't create them as root
+  systemd.tmpfiles.rules = [
+    "d /var/lib/ytptube/config 0755 yasiru users -"
+    "d /path/to/jellyfin/yt-queue 0755 yasiru users -"
+  ];
+
+  # Open port 270 on LAN so you can queue videos from your phone or main laptop
+  networking.firewall.allowedTCPPorts = [ 270 ];
+}
 
 #--------auto start thing ----------------------
 
