@@ -368,7 +368,6 @@ virtualisation.oci-containers = {
 
 
   virtualisation.oci-containers = {
-    backend = "docker";
     containers.ytptube = {
       image = "ghcr.io/arabcoders/ytptube:latest";
       autoStart = true;
