@@ -122,6 +122,8 @@
         echo "✓ $host config pushed"
     '';
 
+    yt = "WLR_DRM_NO_ATOMIC=1 WLR_BACKENDS=libinput,drm WLR_DRM_DEVICES=/dev/dri/card1 cage -- flatpak run rocks.shy.VacuumTube --fullscreen";
+
 
     };
   };
