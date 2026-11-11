@@ -366,7 +366,7 @@ virtualisation.oci-containers = {
     };
   };
 
-{
+
   virtualisation.oci-containers = {
     backend = "docker";
     containers.ytptube = {
@@ -390,9 +390,6 @@ virtualisation.oci-containers = {
     "d /path/to/jellyfin/yt-queue 0755 yasiru users -"
   ];
 
-  # Open port 270 on LAN so you can queue videos from your phone or main laptop
-  networking.firewall.allowedTCPPorts = [ 270 ];
-}
 
 #--------auto start thing ----------------------
 
