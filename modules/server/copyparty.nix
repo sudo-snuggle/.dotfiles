@@ -126,8 +126,8 @@ virtualisation.oci-containers.containers.odysseus = {
       ND_ENABLEMEDIAFILECOVERART = "false";
 
       ND_PLUGINS_ENABLED = "true";
-      ND_LYRICSPRIORITY = ".ttml,.elrc,.lrc,.srt,.txt,embedded,nd-lyrics";
-    };
+      ND_PLUGINS_FOLDER = "/data/plugins";
+      ND_LYRICSPRIORITY = ".ttml,.elrc,.lrc,.srt,.txt,embedded,nd-lyrics";    };
   };
 
   virtualisation.oci-containers.containers.n8n = {
