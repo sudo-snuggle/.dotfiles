@@ -115,7 +115,7 @@ virtualisation.oci-containers.containers.odysseus = {
     ];
     volumes = [
       "/home/yasiru/docker/navidrome/data:/data"
-      "/home/yasiru/Music:/music:"
+      "/home/yasiru/Music:/music"
     ];
     environment = {
       ND_LASTFM_ENABLED = "true";
