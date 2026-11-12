@@ -124,6 +124,9 @@ virtualisation.oci-containers.containers.odysseus = {
       ND_SCANINTERVAL = "1h";
       ND_MUSICFOLDER = "/music";
       ND_ENABLEMEDIAFILECOVERART = "false";
+
+      ND_PLUGINS_ENABLED = "true";
+      ND_LYRICSPRIORITY = ".ttml,.elrc,.lrc,.srt,.txt,embedded,nd-lyrics";
     };
   };
 
