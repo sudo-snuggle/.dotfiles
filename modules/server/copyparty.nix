@@ -123,6 +123,7 @@ virtualisation.oci-containers.containers.odysseus = {
       ND_LASTFM_SECRET = "6bfc4969f1942cb838e45c68feef40ca";
       ND_SCANINTERVAL = "1h";
       ND_MUSICFOLDER = "/music";
+      ND_ENABLEMEDIAFILECOVERART = "false";
     };
   };
 
