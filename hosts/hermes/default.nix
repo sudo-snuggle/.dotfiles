@@ -119,13 +119,7 @@ systemd.user.services.wireplumber = {
   feishin
 
   jellyfin-media-player
-   
-# Kodi with Jellyfin plugin pre-packaged
-  (kodi.passthru.withPackages (kodiPkgs: with kodiPkgs; [
-    jellyfin
-  ]))
 
-  ];
 
   hardware.graphics = {
   enable = true;
