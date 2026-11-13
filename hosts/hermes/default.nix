@@ -119,7 +119,7 @@ systemd.user.services.wireplumber = {
   feishin
 
   jellyfin-media-player
-
+  ]
 
   hardware.graphics = {
   enable = true;
