@@ -116,6 +116,7 @@ systemd.user.services.wireplumber = {
     cage
   moonlight-qt
   libcec
+  feishin
 
   jellyfin-media-player
    
