@@ -22,6 +22,7 @@
     ../../modules/laptop/tlp-server.nix
     ../../modules/desktop/wm.nix
     ../../modules/server/timer.nix
+    ../../modules/server/kodi.nix
 
   ];
 
@@ -119,7 +120,7 @@ systemd.user.services.wireplumber = {
   feishin
 
   jellyfin-media-player
-  ]
+  ];
 
   hardware.graphics = {
   enable = true;
