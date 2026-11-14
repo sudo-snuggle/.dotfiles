@@ -1,6 +1,6 @@
 { config, pkgs, ... }:
 
-{
+
 
   let
   installAnkiScript = pkgs.writeShellScript "install-anki" ''
@@ -15,6 +15,9 @@
       libnss3
   '';
 in
+
+{
+
 
 virtualisation.oci-containers.backend = "docker";
 
