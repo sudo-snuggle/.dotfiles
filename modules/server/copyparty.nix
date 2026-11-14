@@ -2,6 +2,20 @@
 
 {
 
+  let
+  installAnkiScript = pkgs.writeShellScript "install-anki" ''
+    #!/usr/bin/with-contenv bash
+    set -e
+
+    apt-get update
+    apt-get install -y --no-install-recommends \
+      anki \
+      fonts-noto-core \
+      libxcb-cursor0 \
+      libnss3
+  '';
+in
+
 virtualisation.oci-containers.backend = "docker";
 
 virtualisation.oci-containers.containers.copyparty = {
@@ -353,6 +367,7 @@ virtualisation.oci-containers = {
       volumes = [
         "/var/lib/obsidian-config:/config"
         "/home/yasiru/Documents/obsidian:/config/vault"
+        "${installAnkiScript}:/custom-cont-init.d/99-install-anki:ro"
       ];
       environment = {
         PUID = "1000";
