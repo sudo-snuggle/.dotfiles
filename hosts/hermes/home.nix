@@ -4,7 +4,7 @@
 
 imports = [
     ../../home/fish.nix  
-    ../../home/swaytv.nix 
+   # ../../home/swaytv.nix 
   ];
 
 

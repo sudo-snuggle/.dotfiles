@@ -96,8 +96,8 @@
               { pkgs, ... }:
               {
                 environment.systemPackages = [
-                  inputs.freesm.packages.${pkgs.stdenv.hostPlatform.system}.freesmlauncher
-                  inputs.helium.packages.${pkgs.stdenv.hostPlatform.system}.default
+                  inputs.freesm.packages.${pkgs.system}.freesmlauncher
+                  inputs.helium.packages.${pkgs.system}.default
                 ];
               }
             )
@@ -127,14 +127,14 @@
               { pkgs, ... }:
               {
                 environment.systemPackages = [
-                  inputs.helium.packages.${pkgs.stdenv.hostPlatform.system}.default
+                  inputs.helium.packages.${pkgs.system}.default
                 ];
               }
             )
           ];
         };
 
-      # =============== HERMES ===============
+        # =============== HERMES ===============
         hermes = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
           specialArgs = { inherit inputs; };
@@ -155,24 +155,11 @@
 
             (
               { pkgs, ... }:
-              let
-                sys = pkgs.stdenv.hostPlatform.system;
-                tvLauncher = inputs.ags.lib.bundle {
-                  inherit pkgs;
-                  src = ./themes/ags;
-                  name = "hermes-tv-ui";
-                  entry = "app.tsx";
-                  gtk4 = true;
-                  extraPackages = [
-                    inputs.astal.packages.${sys}.apps
-                    inputs.astal.packages.${sys}.process
-                  ];
-                };
-              in
               {
                 environment.systemPackages = [
-                  inputs.helium.packages.${sys}.default
-                  tvLauncher
+                  inputs.helium.packages.${pkgs.system}.default
+                  inputs.ags.packages.${pkgs.system}.default
+                  pkgs.dart-sass
                 ];
               }
             )
