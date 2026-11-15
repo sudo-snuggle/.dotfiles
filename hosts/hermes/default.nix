@@ -19,7 +19,7 @@
     #../../modules/server/nextcloud.nix
     #../../modules/server/ai.nix
     ../../modules/server/copyparty.nix
-    #../../modules/server/printing.nix
+    ../../modules/server/printing.nix
     ../../modules/laptop/tlp-server.nix
     ../../modules/desktop/wm.nix
     ../../modules/server/timer.nix
