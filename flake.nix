@@ -134,7 +134,7 @@
           ];
         };
 
-        # =============== HERMES ===============
+      # =============== HERMES ===============
         hermes = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
           specialArgs = { inherit inputs; };
@@ -157,28 +157,16 @@
               { pkgs, ... }:
               let
                 sys = pkgs.stdenv.hostPlatform.system;
-                agsPkg = inputs.ags.packages.${sys}.default;
-                tvLauncher = pkgs.stdenv.mkDerivation {
-                  name = "hermes-tv-ui";
+                tvLauncher = inputs.ags.lib.bundle {
+                  inherit pkgs;
                   src = ./themes/ags;
-                  nativeBuildInputs = [
-                    agsPkg
-                    pkgs.dart-sass
-                    pkgs.wrapGAppsHook4
-                    pkgs.gobject-introspection
+                  name = "hermes-tv-ui";
+                  entry = "app.tsx";
+                  gtk4 = true;
+                  extraPackages = [
+                    inputs.astal.packages.${sys}.apps
+                    inputs.astal.packages.${sys}.process
                   ];
-                  buildInputs = [
-                    pkgs.gtk4
-                    inputs.astal.packages.${sys}.astal4
-                    inputs.astal.packages.${sys}.io
-                  ];
-                  buildPhase = ''
-                    ags bundle app.tsx hermes-tv-ui --gtk 4
-                  '';
-                  installPhase = ''
-                    mkdir -p $out/bin
-                    cp hermes-tv-ui $out/bin/
-                  '';
                 };
               in
               {
