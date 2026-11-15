@@ -14,9 +14,9 @@
           "                   _.-`/`-._" \
           "       _         _/         \_         _" \
           "      ) `-._   _/  /O\   /O\  \_   _.-\` (" \
-          "     )      \`-/    \`-'   \`-'    \-`      (" \
+          "     )      \`-/    \`-'''   \`-'''    \-`      (" \
           "     )     _.-|      ___        |-._     (" \
-          "      )_.-`   \   .-'   \`._    /   \`._(" \
+          "      )_.-`   \   .-'''   \`._    /   \`._(" \
           "               \   \`-.___.--\`  /" \
           "          FIH   \"-._       _.-\"" \
           "                    \"-._.-\"" \
@@ -25,8 +25,8 @@
       end
     '';
 
-   functions = {
-    deploy-proteus = ''
+    functions = {
+      deploy-proteus = ''
         set host proteus
         set target_dir ~/.dotfiles/hosts/$host
 
@@ -63,51 +63,50 @@
         git commit -m "deploy($host): "(date '+%Y-%m-%d %H:%M')
         git push
         echo "✓ $host deployed and pushed"
-    '';
+      '';
 
- deploy-hermes = ''
-    set host hermes
-    set target_dir ~/.dotfiles/hosts/$host
-    cd ~/.dotfiles
+      deploy-hermes = ''
+        set host hermes
+        set target_dir ~/.dotfiles/hosts/$host
+        cd ~/.dotfiles
 
-    echo "→ resetting and pulling latest from GitHub..."
-    git reset --hard HEAD
-    git clean -fd
-    git pull --rebase
+        echo "→ resetting and pulling latest from GitHub..."
+        git reset --hard HEAD
+        git clean -fd
+        git pull --rebase
 
-    echo "→ copying hardware-configuration.nix..."
-    if test -f /etc/nixos/hardware-configuration.nix
-        cp /etc/nixos/hardware-configuration.nix $target_dir/hardware-configuration.nix
-        git add -N $target_dir/hardware-configuration.nix
-    else
-        echo "⚠ warning: /etc/nixos/hardware-configuration.nix not found in /etc/nixos/"
-    end
+        echo "→ copying hardware-configuration.nix..."
+        if test -f /etc/nixos/hardware-configuration.nix
+            cp /etc/nixos/hardware-configuration.nix $target_dir/hardware-configuration.nix
+            git add -N $target_dir/hardware-configuration.nix
+        else
+            echo "⚠ warning: /etc/nixos/hardware-configuration.nix not found in /etc/nixos/"
+        end
 
-    echo "→ dry-building $host..."
-    if not sudo nixos-rebuild dry-build --flake ~/.dotfiles#$host
-        echo "✗ dry-build failed — cleaning up and aborting"
+        echo "→ dry-building $host..."
+        if not sudo nixos-rebuild dry-build --flake ~/.dotfiles#$host
+            echo "✗ dry-build failed — cleaning up and aborting"
+            git restore --staged $target_dir/hardware-configuration.nix 2>/dev/null
+            rm -f $target_dir/hardware-configuration.nix
+            return 1
+        end
+
+        echo "→ switching $host..."
+        if not sudo nixos-rebuild switch --flake ~/.dotfiles#$host
+            echo "✗ switch failed — cleaning up and aborting"
+            git restore --staged $target_dir/hardware-configuration.nix 2>/dev/null
+            rm -f $target_dir/hardware-configuration.nix
+            return 1
+        end
+
+        echo "→ cleaning up local hardware-configuration.nix..."
         git restore --staged $target_dir/hardware-configuration.nix 2>/dev/null
         rm -f $target_dir/hardware-configuration.nix
-        return 1
-    end
 
-    echo "→ switching $host..."
-    if not sudo nixos-rebuild switch --flake ~/.dotfiles#$host
-        echo "✗ switch failed — cleaning up and aborting"
-        git restore --staged $target_dir/hardware-configuration.nix 2>/dev/null
-        rm -f $target_dir/hardware-configuration.nix
-        return 1
-    end
+        echo "✓ $host deployed"
+      '';
 
-    echo "→ cleaning up local hardware-configuration.nix..."
-    git restore --staged $target_dir/hardware-configuration.nix 2>/dev/null
-    rm -f $target_dir/hardware-configuration.nix
-
-    echo "✓ $host deployed"
-'';
-
-
-    push-proteus = ''
+      push-proteus = ''
         set host proteus
         echo "→ pushing config for $host..."
         cd ~/.dotfiles
@@ -120,26 +119,26 @@
         or return 1
 
         echo "✓ $host config pushed"
-    '';
+      '';
 
-    yt = "WLR_DRM_NO_ATOMIC=1 WLR_BACKENDS=libinput,drm WLR_DRM_DEVICES=/dev/dri/card1 cage -- flatpak run rocks.shy.VacuumTube --fullscreen";
+      yt = "WLR_DRM_NO_ATOMIC=1 WLR_BACKENDS=libinput,drm WLR_DRM_DEVICES=/dev/dri/card1 cage -- flatpak run rocks.shy.VacuumTube --fullscreen";
 
-toggle-audio = {
-    description = "Toggle audio output between laptop speakers and TV HDMI";
-    body = ''
-      set -l hdmi_sink "alsa_output.pci-0000_00_03.0.hdmi-stereo"
-      set -l laptop_sink "alsa_output.pci-0000_00_1b.0.analog-stereo"
-      set -l current (pactl get-default-sink)
+      toggle-audio = {
+        description = "Toggle audio output between laptop speakers and TV HDMI";
+        body = ''
+          set -l hdmi_sink "alsa_output.pci-0000_00_03.0.hdmi-stereo"
+          set -l laptop_sink "alsa_output.pci-0000_00_1b.0.analog-stereo"
+          set -l current (pactl get-default-sink)
 
-      if test "$current" = "$hdmi_sink"
-        pactl set-default-sink "$laptop_sink"
-        echo "Audio -> Laptop Speakers"
-      else
-        pactl set-default-sink "$hdmi_sink"
-        echo "Audio -> TV (HDMI)"
-      end
-    '';
+          if test "$current" = "$hdmi_sink"
+            pactl set-default-sink "$laptop_sink"
+            echo "Audio -> Laptop Speakers"
+          else
+            pactl set-default-sink "$hdmi_sink"
+            echo "Audio -> TV (HDMI)"
+          end
+        '';
+      };
     };
   };
-};
 }
