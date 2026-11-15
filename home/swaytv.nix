@@ -22,29 +22,40 @@ in
     ${tvAppsDir}
   '';
 
-  # 3. Define your TV apps list + dummy trigger files (required by Pegasus)
-  home.file."${tvAppsDir}/youtube.sh".text = "";
-  home.file."${tvAppsDir}/music.sh".text = "";
-  home.file."${tvAppsDir}/terminal.sh".text = "";
+  # Dummy trigger files (required by Pegasus so the tiles show up)
+  home.file."${tvAppsDir}/yt.sh".text = "";
+  home.file."${tvAppsDir}/navidrome.sh".text = "";
+  home.file."${tvAppsDir}/kitty.sh".text = "";
+  home.file."${tvAppsDir}/steam.sh".text = "";
 
+  # Pegasus collection metadata
   home.file."${tvAppsDir}/metadata.pegasus.txt".text = ''
     collection: Apps
     launch: {file.path}
 
     game: YouTube
-    file: youtube.sh
+    file: yt.sh
     launch: flatpak run rocks.shy.VacuumTube --fullscreen
-    assets.boxFront: ${iconsDir}/youtube.png
+    assets.boxFront: ${iconsDir}/yt.jpg
+    assets.background: ${iconsDir}/yt-bg.jpg
 
-    game: Music
-    file: music.sh
+    game: Navidrome
+    file: navidrome.sh
     launch: foot -e /home/yasiru/Downloads/NaviBeat-linux-x86_64.AppImage-tui
-    assets.boxFront: ${iconsDir}/music.png
+    assets.boxFront: ${iconsDir}/navidrome.jpg
+    assets.background: ${iconsDir}/navidrome-bg.jpg
 
     game: Terminal
-    file: terminal.sh
-    launch: foot
-    assets.boxFront: ${iconsDir}/terminal.png
+    file: kitty.sh
+    launch: kitty
+    assets.boxFront: ${iconsDir}/kitty.jpg
+    assets.background: ${iconsDir}/kitty-bg.jpg
+
+    game: Steam
+    file: steam.sh
+    launch: steam -tenfoot
+    assets.boxFront: ${iconsDir}/steam.jpg
+    assets.background: ${iconsDir}/steam-bg.jpg
   '';
 
   # 4. Sway Config (handles fullscreen windows & single-key app closing)

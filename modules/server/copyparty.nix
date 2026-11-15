@@ -125,27 +125,93 @@ virtualisation.oci-containers.containers.odysseus = {
     };
   };
 
-  virtualisation.oci-containers.containers.navidrome = {
-    image = "deluan/navidrome:latest";
-    ports = [
-      "120:4533"
-    ];
-    volumes = [
-      "/home/yasiru/docker/navidrome/data:/data"
-      "/home/yasiru/Music:/music"
-    ];
-    environment = {
-      ND_LASTFM_ENABLED = "true";
-      ND_LASTFM_APIKEY = "956a19b94112e184f4dca4a0dd015980";
-      ND_LASTFM_SECRET = "6bfc4969f1942cb838e45c68feef40ca";
-      ND_SCANINTERVAL = "1h";
-      ND_MUSICFOLDER = "/music";
-      ND_ENABLEMEDIAFILECOVERART = "false";
 
-      ND_PLUGINS_ENABLED = "true";
-      ND_PLUGINS_FOLDER = "/data/plugins";
-      ND_LYRICSPRIORITY = ".ttml,.elrc,.lrc,.srt,.txt,embedded,nd-lyrics";    };
+systemd.tmpfiles.rules = [
+    "d /home/yasiru/Music 0755 yasiru users -"
+    "d /home/yasiru/docker/navidrome/data 0755 yasiru users -"
+    "d /home/yasiru/docker/slskd/config 0755 yasiru users -"
+    "d /home/yasiru/docker/slskd/downloads 0755 yasiru users -"
+    "d /home/yasiru/docker/soulbeet/data 0755 yasiru users -"
+    "d /home/yasiru/docker/soulbeet/beets 0755 yasiru users -"
+    "f /home/yasiru/docker/soulbeet/beets/config.yaml 0644 yasiru users - directory: /music\\nlibrary: /config/musiclibrary.blb\\nimport:\\n  move: yes\\n"
+  ];
+
+  # Dedicated Docker network for your media stack so they resolve each other by name
+  systemd.services.init-media-network = {
+    description = "Create Docker network for media containers";
+    after = [ "docker.service" ];
+    requires = [ "docker.service" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig.Type = "oneshot";
+    script = ''
+      ${pkgs.docker}/bin/docker network inspect media-net >/dev/null 2>&1 || \
+      ${pkgs.docker}/bin/docker network create media-net
+    '';
   };
+
+  # Isolated OCI Containers block for just this stack
+  virtualisation.oci-containers = {
+    containers = {
+      navidrome = {
+        image = "deluan/navidrome:latest";
+        ports = [ "120:4533" ];
+        extraOptions = [ "--network=media-net" ];
+        volumes = [
+          "/home/yasiru/docker/navidrome/data:/data"
+          "/home/yasiru/Music:/music"
+        ];
+        environment = {
+          ND_LASTFM_ENABLED = "true";
+          ND_LASTFM_APIKEY = "956a19b94112e184f4dca4a0dd015980";
+          ND_LASTFM_SECRET = "6bfc4969f1942cb838e45c68feef40ca";
+          ND_SCANINTERVAL = "1h";
+          ND_MUSICFOLDER = "/music";
+          ND_ENABLEMEDIAFILECOVERART = "false";
+          ND_PLUGINS_ENABLED = "true";
+          ND_PLUGINS_FOLDER = "/data/plugins";
+          ND_LYRICSPRIORITY = ".ttml,.elrc,.lrc,.srt,.txt,embedded,nd-lyrics";
+        };
+      };
+
+      slskd = {
+        image = "slskd/slskd:latest";
+        ports = [ "290:5030" ];
+        extraOptions = [ "--network=media-net" ];
+        environment = {
+          SLSKD_REMOTE_CONFIGURATION = "true";
+        };
+        volumes = [
+          "/home/yasiru/docker/slskd/config:/app/slskd.conf.d"
+          "/home/yasiru/docker/slskd/downloads:/app/downloads"
+        ];
+      };
+
+      soulbeet = {
+        image = "docker.io/docccccc/soulbeet:latest";
+        ports = [ "280:9765" ];
+        extraOptions = [ "--network=media-net" ];
+        depends_on = [ "slskd" "navidrome" ];
+        environment = {
+          DATABASE_URL = "sqlite:/data/soulbeet.db";
+          DOWNLOAD_PATH = "/downloads";
+          SECRET_KEY = "change-me-in-production";
+          NAVIDROME_URL = "http://navidrome:4533";
+          BEETS_CONFIG = "/config/config.yaml";
+        };
+        volumes = [
+          "/home/yasiru/docker/soulbeet/data:/data"
+          "/home/yasiru/docker/soulbeet/beets:/config"
+          "/home/yasiru/docker/slskd/downloads:/downloads"
+          "/home/yasiru/Music:/music"
+        ];
+      };
+    };
+  };
+
+  # Ensure these specific containers wait for the custom network to spin up
+  systemd.services.docker-navidrome.after = [ "init-media-network.service" ];
+  systemd.services.docker-slskd.after = [ "init-media-network.service" ];
+  systemd.services.docker-soulbeet.after = [ "init-media-network.service" ];
 
   virtualisation.oci-containers.containers.n8n = {
     image = "docker.n8n.io/n8nio/n8n";
