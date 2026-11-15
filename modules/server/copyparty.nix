@@ -134,6 +134,11 @@ systemd.tmpfiles.rules = [
     "d /home/yasiru/docker/soulbeet/data 0755 yasiru users -"
     "d /home/yasiru/docker/soulbeet/beets 0755 yasiru users -"
     "f /home/yasiru/docker/soulbeet/beets/config.yaml 0644 yasiru users - directory: /music\\nlibrary: /config/musiclibrary.blb\\nimport:\\n  move: yes\\n"
+
+
+        "d /var/lib/ytptube/config 0755 yasiru users -"
+    "d /path/to/jellyfin/yt-queue 0755 yasiru users -"
+    
   ];
 
   # Dedicated Docker network for your media stack so they resolve each other by name
@@ -475,11 +480,7 @@ virtualisation.oci-containers = {
     };
   };
 
-  # Ensure directories exist with 1000:1000 ownership so Docker doesn't create them as root
-  systemd.tmpfiles.rules = [
-    "d /var/lib/ytptube/config 0755 yasiru users -"
-    "d /path/to/jellyfin/yt-queue 0755 yasiru users -"
-  ];
+ 
 
 
 #--------auto start thing ----------------------
