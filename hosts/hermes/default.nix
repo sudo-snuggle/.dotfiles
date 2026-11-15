@@ -24,6 +24,7 @@
     ../../modules/desktop/wm.nix
     ../../modules/server/timer.nix
     ../../modules/server/kodi.nix
+    ../../modules/desktop/appimage.nix
 
   ];
 
@@ -144,7 +145,7 @@ systemd.user.services.wireplumber = {
   jellyfin-media-player
 
   nwg-launchers
-  
+
   ];
 
   hardware.graphics = {
