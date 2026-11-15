@@ -11,6 +11,30 @@
       "192.168.8.*"   # EDIT: Change to match your local subnet (e.g. 192.168.1.0/24 range)
       #"100.*.*.*"     # Tailscale network
     ];
+   extraConf = ''
+      ServerAlias *
+      DefaultEncryption Never
+      <Location />
+        Order allow,deny
+        Allow localhost
+        Allow 192.168.8.*
+        Allow 192.168.1.*
+      </Location>
+      <Location /admin>
+        Order allow,deny
+        Allow localhost
+        Allow 192.168.8.*
+        Allow 192.168.1.*
+      </Location>
+      <Location /admin/conf>
+        AuthType Default
+        Require user @SYSTEM
+        Order allow,deny
+        Allow localhost
+        Allow 192.168.8.*
+        Allow 192.168.1.*
+      </Location>
+    '';
     browsing = true;
     defaultShared = true;
     openFirewall = true;
