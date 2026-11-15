@@ -187,12 +187,13 @@ systemd.tmpfiles.rules = [
         };
       };
 
-      slskd = {
+     slskd = {
         image = "slskd/slskd:latest";
         ports = [ "290:5030" ];
         extraOptions = [ "--network=media-net" ];
         environment = {
           SLSKD_REMOTE_CONFIGURATION = "true";
+          SLSKD_WEBSOCKET_AUTHENTICATION_ENABLED = "false"; # or pass an explicit token
         };
         volumes = [
           "/home/yasiru/docker/slskd/config:/app/slskd.conf.d"
