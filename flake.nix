@@ -96,8 +96,8 @@
               { pkgs, ... }:
               {
                 environment.systemPackages = [
-                  inputs.freesm.packages.${pkgs.system}.freesmlauncher
-                  inputs.helium.packages.${pkgs.system}.default
+                  inputs.freesm.packages.${pkgs.stdenv.hostPlatform.system}.freesmlauncher
+                  inputs.helium.packages.${pkgs.stdenv.hostPlatform.system}.default
                 ];
               }
             )
@@ -127,7 +127,7 @@
               { pkgs, ... }:
               {
                 environment.systemPackages = [
-                  inputs.helium.packages.${pkgs.system}.default
+                  inputs.helium.packages.${pkgs.stdenv.hostPlatform.system}.default
                 ];
               }
             )
@@ -156,17 +156,34 @@
             (
               { pkgs, ... }:
               let
-                tvLauncher = inputs.ags.lib.bundle {
-                  inherit pkgs;
-                  src = ./themes/ags;
+                sys = pkgs.stdenv.hostPlatform.system;
+                agsPkg = inputs.ags.packages.${sys}.default;
+                tvLauncher = pkgs.stdenv.mkDerivation {
                   name = "hermes-tv-ui";
-                  entry = "app.tsx";
-                  gtk4 = true;
+                  src = ./themes/ags;
+                  nativeBuildInputs = [
+                    agsPkg
+                    pkgs.dart-sass
+                    pkgs.wrapGAppsHook4
+                    pkgs.gobject-introspection
+                  ];
+                  buildInputs = [
+                    pkgs.gtk4
+                    inputs.astal.packages.${sys}.astal4
+                    inputs.astal.packages.${sys}.io
+                  ];
+                  buildPhase = ''
+                    ags bundle app.tsx hermes-tv-ui --gtk 4
+                  '';
+                  installPhase = ''
+                    mkdir -p $out/bin
+                    cp hermes-tv-ui $out/bin/
+                  '';
                 };
               in
               {
                 environment.systemPackages = [
-                  inputs.helium.packages.${pkgs.system}.default
+                  inputs.helium.packages.${sys}.default
                   tvLauncher
                 ];
               }
