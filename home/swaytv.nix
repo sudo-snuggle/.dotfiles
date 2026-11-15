@@ -10,7 +10,7 @@ in
   ];
 
   # 1. Link your local Clean-Covers folder directly (no hash or flake input needed)
-  home.file.".config/pegasus-frontend/themes/Clean-Covers".source = ./themes/Clean-Covers;
+  #home.file.".config/pegasus-frontend/themes/Clean-Covers".source = ./themes/Clean-Covers;
 
   # 2. Configure Pegasus to use Clean Covers and scan ~/.local/share/tv-apps
   home.file.".config/pegasus-frontend/settings.txt".text = ''
