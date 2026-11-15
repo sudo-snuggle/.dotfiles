@@ -142,6 +142,9 @@ systemd.user.services.wireplumber = {
   feishin
 
   jellyfin-media-player
+
+  nwg-launchers
+  
   ];
 
   hardware.graphics = {
