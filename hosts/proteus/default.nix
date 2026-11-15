@@ -127,6 +127,8 @@ hardware.sane = {
     supersonic
     
     simple-scan
+
+    nwg-launchers
     
   ];
 
