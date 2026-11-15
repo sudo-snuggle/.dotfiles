@@ -14,11 +14,4 @@ imports = [
 
   programs.home-manager.enable = true;
 
-  custom.swayTv = {
-    enable = true;
-    # Optional overrides if your HDMI port or resolution differs:
-    # tvOutput = "HDMI-A-1";
-    # tvMode = "1920x1080@60Hz";
-    # internalOutput = "LVDS-1";
-  };
 }
