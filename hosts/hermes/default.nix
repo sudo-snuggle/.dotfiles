@@ -19,7 +19,7 @@
     #../../modules/server/nextcloud.nix
     #../../modules/server/ai.nix
     ../../modules/server/copyparty.nix
-    ../../modules/server/printing.nix
+    #../../modules/server/printing.nix
     ../../modules/laptop/tlp-server.nix
     ../../modules/desktop/wm.nix
     ../../modules/server/timer.nix
@@ -57,6 +57,27 @@
       ignore-auto-dns = "true";
     };
   };
+
+  networking.networkmanager.ensureProfiles.profiles."SLT-Fiber-2.4G_e130" = {
+  connection = {
+    id = "SLT-Fiber-2.4G_e130";
+    type = "wifi";
+  };
+  wifi = {
+    ssid = "SLT-Fiber-2.4G_e130";
+    mode = "infrastructure";
+  };
+  wifi-security = {
+    key-mgmt = "wpa-psk";
+    psk = "calm6946";
+  };
+  ipv4 = {
+    method = "manual";
+    address1 = "192.168.1.9/24,192.168.1.1";
+    dns = "127.0.0.1;";
+    ignore-auto-dns = "true";
+  };
+};
 
   # ---------- tailscale (secure mesh VPN) ----------
   # Uncomment when ready for encrypted remote access:
