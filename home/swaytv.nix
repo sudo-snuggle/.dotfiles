@@ -2,80 +2,59 @@
 
 let
   iconsDir = "${config.home.homeDirectory}/Downloads/icons";
-
-  # Point each app to an exact image file inside ~/Downloads/icons/
-  tvApps = {
-    youtube = {
-      name = "YouTube";
-      exec = "flatpak run rocks.shy.VacuumTube --fullscreen";
-      icon = "${iconsDir}/youtube.png";
-    };
-    music = {
-      name = "Music";
-      exec = "foot -e appimage-run /home/yasiru/Downloads/NaviBeat-linux-x86_64.AppImage-tui";      
-      icon = "${iconsDir}/music.png";
-    };
-    terminal = {
-      name = "Terminal";
-      exec = "foot";
-      icon = "${iconsDir}/terminal.png";
-    };
-  };
-
-  gridDir = "${config.home.homeDirectory}/.local/share/tv-apps";
-  gridCmd = "nwggrid -f -g -s 128 -n 4 -d ${gridDir}";
+  tvAppsDir = "${config.home.homeDirectory}/.local/share/tv-apps";
 in
 {
   home.packages = with pkgs; [
-    nwg-launchers
+    pegasus-frontend
   ];
 
-  # Generate the custom .desktop files in ~/.local/share/tv-apps/
-  home.file = (pkgs.lib.mapAttrs' (id: app: {
-    name = ".local/share/tv-apps/${id}.desktop";
-    value.text = ''
-      [Desktop Entry]
-      Name=${app.name}
-      Exec=${app.exec}
-      Icon=${app.icon}
-      Type=Application
-      Terminal=false
-    '';
-  }) tvApps) // {
-    # Style the tiles and keep the app names visible & readable
-    ".config/nwg-launchers/nwggrid/style.css".text = ''
-      window {
-        background-color: #0b0f17;
-      }
-      button {
-        background: rgba(255, 255, 255, 0.04);
-        border: 2px solid transparent;
-        border-radius: 20px;
-        padding: 24px;
-        margin: 12px;
-      }
-      button:focus, button:hover {
-        background-color: rgba(255, 255, 255, 0.12);
-        border: 2px solid #38bdf8;
-      }
-      button label {
-        color: #f8fafc;
-        font-size: 18px;
-        font-weight: bold;
-        margin-top: 10px;
-      }
-    '';
-  };
+  # 1. Link your local Clean-Covers folder directly (no hash or flake input needed)
+  home.file.".config/pegasus-frontend/themes/Clean-Covers".source = ./themes/Clean-Covers;
 
-  # Sway Kiosk & Launcher Configuration
+  # 2. Configure Pegasus to use Clean Covers and scan ~/.local/share/tv-apps
+  home.file.".config/pegasus-frontend/settings.txt".text = ''
+    general.theme: themes/Clean-Covers
+    general.fullscreen: true
+  '';
+
+  home.file.".config/pegasus-frontend/game_dirs.txt".text = ''
+    ${tvAppsDir}
+  '';
+
+  # 3. Define your TV apps list + dummy trigger files (required by Pegasus)
+  home.file."${tvAppsDir}/youtube.sh".text = "";
+  home.file."${tvAppsDir}/music.sh".text = "";
+  home.file."${tvAppsDir}/terminal.sh".text = "";
+
+  home.file."${tvAppsDir}/metadata.pegasus.txt".text = ''
+    collection: Apps
+    launch: {file.path}
+
+    game: YouTube
+    file: youtube.sh
+    launch: flatpak run rocks.shy.VacuumTube --fullscreen
+    assets.boxFront: ${iconsDir}/youtube.png
+
+    game: Music
+    file: music.sh
+    launch: foot -e /home/yasiru/Downloads/NaviBeat-linux-x86_64.AppImage-tui
+    assets.boxFront: ${iconsDir}/music.png
+
+    game: Terminal
+    file: terminal.sh
+    launch: foot
+    assets.boxFront: ${iconsDir}/terminal.png
+  '';
+
+  # 4. Sway Config (handles fullscreen windows & single-key app closing)
   wayland.windowManager.sway = {
     enable = true;
     config = {
       modifier = "Mod4";
 
       startup = [
-        { command = "nwggrid-server -f -g -s 128 -n 4 -d ${gridDir}"; }
-        { command = gridCmd; }
+        { command = "pegasus-fe"; }
       ];
 
       window.commands = [
@@ -90,10 +69,12 @@ in
       ];
 
       keybindings = {
-        "Mod4" = "kill; exec ${gridCmd}";
-        "XF86HomePage" = "kill; exec ${gridCmd}";
-        "XF86Back" = "kill; exec ${gridCmd}";
+        # Smart TV Home button: kills active app, revealing Pegasus underneath
+        "Mod4" = "[app_id=\"^(?!pegasus-fe).*$\"] kill";
+        "XF86HomePage" = "[app_id=\"^(?!pegasus-fe).*$\"] kill";
+        "XF86Back" = "[app_id=\"^(?!pegasus-fe).*$\"] kill";
 
+        # Volume controls
         "ctrl+less" = "exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-";
         "ctrl+comma" = "exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-";
         "XF86AudioLowerVolume" = "exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-";
