@@ -138,7 +138,7 @@ systemd.tmpfiles.rules = [
 
         "d /var/lib/ytptube/config 0755 yasiru users -"
     "d /path/to/jellyfin/yt-queue 0755 yasiru users -"
-    
+
   ];
 
   # Dedicated Docker network for your media stack so they resolve each other by name
@@ -195,7 +195,7 @@ systemd.tmpfiles.rules = [
         image = "docker.io/docccccc/soulbeet:latest";
         ports = [ "280:9765" ];
         extraOptions = [ "--network=media-net" ];
-        depends_on = [ "slskd" "navidrome" ];
+        dependsOn = [ "slskd" "navidrome" ];
         environment = {
           DATABASE_URL = "sqlite:/data/soulbeet.db";
           DOWNLOAD_PATH = "/downloads";
