@@ -12,7 +12,7 @@ let
     };
     music = {
       name = "Music";
-      exec = "appimage-run /home/yasiru/Downloads/NaviBeat-linux-x86_64.AppImage";
+      exec = "foot -e appimage-run /home/yasiru/Downloads/NaviBeat-linux-x86_64.AppImage-tui";      
       icon = "${iconsDir}/music.png";
     };
     terminal = {
