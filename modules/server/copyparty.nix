@@ -125,6 +125,7 @@ virtualisation.oci-containers.containers.odysseus = {
     };
   };
 
+#.........................
 
 systemd.tmpfiles.rules = [
     "d /home/yasiru/Music 0755 yasiru users -"
@@ -133,13 +134,21 @@ systemd.tmpfiles.rules = [
     "d /home/yasiru/docker/slskd/downloads 0755 yasiru users -"
     "d /home/yasiru/docker/soulbeet/data 0755 yasiru users -"
     "d /home/yasiru/docker/soulbeet/beets 0755 yasiru users -"
-    "f /home/yasiru/docker/soulbeet/beets/config.yaml 0644 yasiru users - directory: /music\\nlibrary: /config/musiclibrary.blb\\nimport:\\n  move: yes\\n"
-
-
-        "d /var/lib/ytptube/config 0755 yasiru users -"
+    "d /var/lib/ytptube/config 0755 yasiru users -"
     "d /path/to/jellyfin/yt-queue 0755 yasiru users -"
-
   ];
+
+  # Properly initialize the Beets config file with actual newlines if it doesn't exist
+  systemd.services.init-soulbeet-config = {
+    description = "Initialize Soulbeet Beets config file";
+    wantedBy = [ "multi-user.target" ];
+    script = ''
+      if [ ! -f /home/yasiru/docker/soulbeet/beets/config.yaml ]; then
+        printf "directory: /music\nlibrary: /config/musiclibrary.blb\nimport:\n  move: yes\n" > /home/yasiru/docker/soulbeet/beets/config.yaml
+        chown -R yasiru:users /home/yasiru/docker/soulbeet/beets
+      fi
+    '';
+  };
 
   # Dedicated Docker network for your media stack so they resolve each other by name
   systemd.services.init-media-network = {
@@ -213,10 +222,11 @@ systemd.tmpfiles.rules = [
     };
   };
 
-  # Ensure these specific containers wait for the custom network to spin up
+  # Ensure these specific containers wait for the custom network and config file to spin up
   systemd.services.docker-navidrome.after = [ "init-media-network.service" ];
   systemd.services.docker-slskd.after = [ "init-media-network.service" ];
-  systemd.services.docker-soulbeet.after = [ "init-media-network.service" ];
+  systemd.services.docker-soulbeet.after = [ "init-media-network.service" "init-soulbeet-config.service" ];
+  #....................
 
   virtualisation.oci-containers.containers.n8n = {
     image = "docker.n8n.io/n8nio/n8n";
