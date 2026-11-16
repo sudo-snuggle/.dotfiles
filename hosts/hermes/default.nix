@@ -141,6 +141,7 @@ systemd.user.services.wireplumber = {
   moonlight-qt
   libcec
   feishin
+  vacuum-tube
 
   jellyfin-media-player
 
