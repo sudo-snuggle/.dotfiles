@@ -9,6 +9,10 @@ in
     pegasus-frontend
   ];
 
+  # 1. Link your local Clean-Covers folder directly (no hash or flake input needed)
+  #home.file.".config/pegasus-frontend/themes/Clean-Covers".source = ./themes/Clean-Covers;
+
+  # 2. Configure Pegasus to use Clean Covers and scan ~/.local/share/tv-apps
   home.file.".config/pegasus-frontend/settings.txt".text = ''
     general.theme: themes/Clean-Covers
     general.fullscreen: true
@@ -18,7 +22,7 @@ in
     ${tvAppsDir}
   '';
 
-  # Dummy trigger files
+  # Dummy trigger files (required by Pegasus so the tiles show up)
   home.file."${tvAppsDir}/yt.sh".text = "";
   home.file."${tvAppsDir}/kitty.sh".text = "";
   home.file."${tvAppsDir}/feishin.sh".text = "";
@@ -31,7 +35,7 @@ in
 
     game: YouTube
     file: yt.sh
-    launch: flatpak run --socket=wayland rocks.shy.VacuumTube --fullscreen --ozone-platform=wayland --enable-features=UseOzonePlatform
+    launch: vacuum-tube --fullscreen
     assets.boxFront: ${iconsDir}/yt.png
     assets.tile: ${iconsDir}/yt.png
     assets.logo: ${iconsDir}/yt.png
@@ -62,7 +66,7 @@ in
     assets.background: ${iconsDir}/steam-bg.jpg
   '';
 
-  # Sway Config
+  # 4. Sway Config (handles fullscreen windows & single-key app closing)
   wayland.windowManager.sway = {
     enable = true;
     extraSessionCommands = ''
