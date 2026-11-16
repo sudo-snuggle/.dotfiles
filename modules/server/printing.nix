@@ -15,6 +15,7 @@
     extraConf = ''
       ServerAlias *
       DefaultEncryption Never
+      BrowseLocalProtocols dnssd
     '';
     browsing = true;
     defaultShared = true;
@@ -23,6 +24,8 @@
 
   services.avahi = {
     enable = true;
+    ipv4 = true;
+    ipv6 = false;
     nssmdns4 = true;
     openFirewall = true;
     publish = {

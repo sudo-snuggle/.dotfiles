@@ -52,10 +52,10 @@ in
     game: Feishin
     file: feishin.sh
     launch: feishin
-    assets.boxFront: ${iconsDir}/feishin.jpg
-    assets.tile: ${iconsDir}/feishin.jpg
-    assets.logo: ${iconsDir}/feishin.jpg
-    assets.background: ${iconsDir}/feishin-bg.jpg
+    assets.boxFront: ${iconsDir}/navidrome.jpg
+    assets.tile: ${iconsDir}/navidrome.jpg
+    assets.logo: ${iconsDir}/navidrome.jpg
+    assets.background: ${iconsDir}/navidrome-bg.jpg
 
     game: Steam
     file: steam.sh
