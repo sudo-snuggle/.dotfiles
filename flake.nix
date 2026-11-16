@@ -143,7 +143,7 @@
           ];
         };
 
-        # =============== HERMES ===============
+       # =============== HERMES ===============
         hermes = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
           specialArgs = { inherit inputs; };
@@ -167,23 +167,7 @@
               {
                 environment.systemPackages = [
                   inputs.helium.packages.${pkgs.system}.default
-
-                  # Psysonic
-                  inputs.psysonic.packages.${pkgs.system}.psysonic
                 ];
-
-                # Psysonic binary cache
-                nix.settings = {
-                  substituters = [
-                    "https://psysonic.cachix.org"
-                    "https://cache.nixos.org/"
-                  ];
-
-                  trusted-public-keys = [
-                    "psysonic.cachix.org-1:M9cQyQ7tgvUWOQ5Pyt8ozlMoPLtOZir6MfRuTH9/VYA="
-                    "cache.nixos.org-1:6NCHdSuAYQQOxGEKTGXLN9WWRXoSBT8GRiSnR6IdfGW="
-                  ];
-                };
               }
             )
           ];
