@@ -35,7 +35,7 @@ in
 
     game: YouTube
     file: yt.sh
-    launch: vacuum-tube --fullscreen
+    launch: VacuumTube --fullscreen
     assets.boxFront: ${iconsDir}/yt.png
     assets.tile: ${iconsDir}/yt.png
     assets.logo: ${iconsDir}/yt.png
