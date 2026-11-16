@@ -145,6 +145,7 @@ systemd.user.services.wireplumber = {
   jellyfin-media-player
 
   nwg-launchers
+  feishin
 
   ];
 
