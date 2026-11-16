@@ -9,10 +9,6 @@ in
     pegasus-frontend
   ];
 
-  # 1. Link your local Clean-Covers folder directly (no hash or flake input needed)
-  #home.file.".config/pegasus-frontend/themes/Clean-Covers".source = ./themes/Clean-Covers;
-
-  # 2. Configure Pegasus to use Clean Covers and scan ~/.local/share/tv-apps
   home.file.".config/pegasus-frontend/settings.txt".text = ''
     general.theme: themes/Clean-Covers
     general.fullscreen: true
@@ -22,20 +18,20 @@ in
     ${tvAppsDir}
   '';
 
-# Dummy trigger files (required by Pegasus so the tiles show up)
+  # Dummy trigger files
   home.file."${tvAppsDir}/yt.sh".text = "";
   home.file."${tvAppsDir}/kitty.sh".text = "";
   home.file."${tvAppsDir}/feishin.sh".text = "";
   home.file."${tvAppsDir}/steam.sh".text = "";
 
   # Pegasus collection metadata
-home.file."${tvAppsDir}/metadata.pegasus.txt".text = ''
+  home.file."${tvAppsDir}/metadata.pegasus.txt".text = ''
     collection: Apps
     launch: {file.path}
 
     game: YouTube
     file: yt.sh
-    launch: flatpak run rocks.shy.VacuumTube --fullscreen
+    launch: flatpak run --socket=wayland rocks.shy.VacuumTube --fullscreen --ozone-platform=wayland --enable-features=UseOzonePlatform
     assets.boxFront: ${iconsDir}/yt.png
     assets.tile: ${iconsDir}/yt.png
     assets.logo: ${iconsDir}/yt.png
@@ -65,10 +61,14 @@ home.file."${tvAppsDir}/metadata.pegasus.txt".text = ''
     assets.logo: ${iconsDir}/steam.png
     assets.background: ${iconsDir}/steam-bg.jpg
   '';
-  
-    # 4. Sway Config (handles fullscreen windows & single-key app closing)
+
+  # Sway Config
   wayland.windowManager.sway = {
     enable = true;
+    extraSessionCommands = ''
+      export WLR_DRM_DEVICES=/dev/dri/card1
+      export WLR_DRM_NO_ATOMIC=1
+    '';
     config = {
       modifier = "Mod4";
 
@@ -88,10 +88,10 @@ home.file."${tvAppsDir}/metadata.pegasus.txt".text = ''
       ];
 
       keybindings = {
-        # Smart TV Home button: kills active app, revealing Pegasus underneath
-        "Mod4" = "[app_id=\"^(?!pegasus-fe).*$\"] kill";
-        "XF86HomePage" = "[app_id=\"^(?!pegasus-fe).*$\"] kill";
-        "XF86Back" = "[app_id=\"^(?!pegasus-fe).*$\"] kill";
+        # Win+Q (and TV Back/Home buttons): close active app (Wayland or XWayland) unless it's Pegasus
+        "Mod4+q" = "[app_id=\"^(?!pegasus-fe).*$\"] kill; [class=\".*\"] kill";
+        "XF86HomePage" = "[app_id=\"^(?!pegasus-fe).*$\"] kill; [class=\".*\"] kill";
+        "XF86Back" = "[app_id=\"^(?!pegasus-fe).*$\"] kill; [class=\".*\"] kill";
 
         # Volume controls
         "ctrl+less" = "exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-";
