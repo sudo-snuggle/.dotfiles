@@ -132,6 +132,7 @@ systemd.user.services.wireplumber = {
     jq
     micro
     neovim
+    kitty
     
     # Media Extraction & Processing
     yt-dlp
