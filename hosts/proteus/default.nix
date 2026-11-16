@@ -140,7 +140,7 @@ hardware.sane = {
 
   networking.firewall = {
     enable = true;
-    allowedTCPPorts = [ 7070 47984 47989 47990 48010 ];
+    allowedTCPPorts = [ 7070 47984 47989 47990 48010 4333];
     allowedUDPPortRanges = [
       { from = 47998; to = 48000; }
       { from = 48002; to = 48010; }
