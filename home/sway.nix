@@ -5,7 +5,7 @@
     enable = true;
 
     # Correct location for xwayland flag:
-    xwayland = false;
+    xwayland = true;
 
     # Stripped GTK wrapper feature to save startup overhead / D-Bus hooks
     # wrapperFeatures.gtk = true;
