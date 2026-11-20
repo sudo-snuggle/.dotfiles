@@ -70,6 +70,7 @@ in
   # 4. Sway Config (handles fullscreen windows & single-key app closing)
   wayland.windowManager.sway = {
     enable = true;
+    checkConfig = false; # Skip sandbox validation so runtime ~/Downloads/icons/wall.jpg doesn't fail the build
     extraSessionCommands = ''
       export WLR_DRM_DEVICES=/dev/dri/card1
       export WLR_DRM_NO_ATOMIC=1
@@ -80,9 +81,9 @@ in
       # Completely disable swaybar
       bars = [];
 
-      # Set wallpaper across all outputs
+      # Set wallpaper across all outputs with pitch-black fallback
       output."*" = {
-        bg = "${iconsDir}/wall.jpg fill";
+        bg = "${iconsDir}/wall.jpg fill #000000";
       };
 
       startup = [

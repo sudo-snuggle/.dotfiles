@@ -136,6 +136,8 @@ services.flatpak.enable = true;
   p7zip
   unzip
   udiskie
+
+  mullvad-browser
   ];
 
   # Enable the Virtual KMS display driver
