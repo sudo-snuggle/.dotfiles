@@ -122,7 +122,7 @@ services.flatpak.enable = true;
     # lutris
     pcmanfm-qt
     gh
-    qutebrowser
+    #qutebrowser
     wlr-randr
     nwg-displays
     kanshi
