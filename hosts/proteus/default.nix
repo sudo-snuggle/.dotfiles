@@ -132,6 +132,10 @@ services.flatpak.enable = true;
 
     nwg-launchers
     
+    yazi
+  p7zip
+  unzip
+  udiskie
   ];
 
   # Enable the Virtual KMS display driver

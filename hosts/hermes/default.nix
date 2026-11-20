@@ -148,6 +148,10 @@ systemd.user.services.wireplumber = {
 
   nwg-launchers
   feishin
+  yazi
+  p7zip
+  unzip
+  udiskie
 
   ];
 
