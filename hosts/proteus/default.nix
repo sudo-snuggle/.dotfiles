@@ -108,6 +108,8 @@ hardware.sane = {
   extraBackends = [ pkgs.epsonscan2 ];
 };
 
+services.flatpak.enable = true;
+
   # ---------- packages ----------
   environment.systemPackages = with pkgs; [
     linuxPackages.cpupower
