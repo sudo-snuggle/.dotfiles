@@ -1,28 +1,11 @@
 { config, pkgs, ... }:
 
-
-
-  let
-  installAnkiScript = pkgs.writeShellScript "install-anki" ''
-    #!/usr/bin/with-contenv bash
-    set -e
-
-    apt-get update
-    apt-get install -y --no-install-recommends \
-      anki \
-      fonts-noto-core \
-      libxcb-cursor0 \
-      libnss3
-  '';
-in
-
 {
+  virtualisation.oci-containers.backend = "docker";
 
-
-virtualisation.oci-containers.backend = "docker";
-
-virtualisation.oci-containers.containers.copyparty = {
-image = "docker.io/copyparty/ac:latest";    ports = [
+  virtualisation.oci-containers.containers.copyparty = {
+    image = "docker.io/copyparty/ac:latest";
+    ports = [
       "130:3923"
     ];
     volumes = [
@@ -39,72 +22,64 @@ image = "docker.io/copyparty/ac:latest";    ports = [
     ];
   };
 
-
-virtualisation.oci-containers.containers.pinchflat = {
-  image = "ghcr.io/kieraneglin/pinchflat:latest";
-  ports = [ "190:8945" ];
- volumes = [
-    "/home/yasiru/docker/pinchflat-config:/config"
-    "/home/yasiru/Videos/channels:/downloads"
-  ];
-  environment = {
-    TZ = "Asia/Colombo";
+  virtualisation.oci-containers.containers.pinchflat = {
+    image = "ghcr.io/kieraneglin/pinchflat:latest";
+    ports = [ "190:8945" ];
+    volumes = [
+      "/home/yasiru/docker/pinchflat-config:/config"
+      "/home/yasiru/Videos/channels:/downloads"
+    ];
+    environment = {
+      TZ = "Asia/Colombo";
+    };
+    extraOptions = [
+      "--dns=8.8.8.8"
+      "--dns=1.1.1.1"
+    ];
   };
-  # Use extraOptions to pass --dns, 
-  extraOptions = [
-    "--dns=8.8.8.8"
-    "--dns=1.1.1.1"
-  ];
-};
 
-
-virtualisation.oci-containers.containers.jellyfin = {
-  image = "jellyfin/jellyfin:latest";
-  ports = [
-    "170:8096"
-  ];
-  volumes = [
-    # 1. Config and Cache (Inside ~/docker/jellyfin)
-    "/home/yasiru/docker/jellyfin/config:/config"
-    "/home/yasiru/docker/jellyfin/cache:/cache"
-    
-    # 2. Media Folders (Read-Write)
-    "/home/yasiru/Videos/avg:/media:rw"
-    "/home/yasiru/Videos/360:/360:rw"
-    "/home/yasiru/Videos/channels:/channels:rw"
-  ];
-  environment = {
-    PUID = "1000";
-    PGID = "1000";
-    TZ = "Asia/Colombo"; #
+  virtualisation.oci-containers.containers.jellyfin = {
+    image = "jellyfin/jellyfin:latest";
+    ports = [
+      "170:8096"
+    ];
+    volumes = [
+      # 1. Config and Cache (Inside ~/docker/jellyfin)
+      "/home/yasiru/docker/jellyfin/config:/config"
+      "/home/yasiru/docker/jellyfin/cache:/cache"
+      
+      # 2. Media Folders (Read-Write)
+      "/home/yasiru/Videos/avg:/media:rw"
+      "/home/yasiru/Videos/360:/360:rw"
+      "/home/yasiru/Videos/channels:/channels:rw"
+    ];
+    environment = {
+      PUID = "1000";
+      PGID = "1000";
+      TZ = "Asia/Colombo";
+    };
   };
-};
 
-virtualisation.oci-containers.containers.odysseus = {
-  image = "ghcr.io/pewdiepie-archdaemon/odysseus:latest";
-  ports = [
-    "230:7000"
-  ];
-  volumes = [
-    "/home/yasiru/docker/odysseus/data:/app/data"
-    "/home/yasiru/docker/odysseus/config:/app/config"
-  ];
-  environment = {
-    TZ = "Asia/Colombo";
-    AUTH_ENABLED = "true";
-    # Point to your local Ollama instance
-    # OLLAMA_BASE_URL = "http://127.0.0.1:11434";
+  virtualisation.oci-containers.containers.odysseus = {
+    image = "ghcr.io/pewdiepie-archdaemon/odysseus:latest";
+    ports = [
+      "230:7000"
+    ];
+    volumes = [
+      "/home/yasiru/docker/odysseus/data:/app/data"
+      "/home/yasiru/docker/odysseus/config:/app/config"
+    ];
+    environment = {
+      TZ = "Asia/Colombo";
+      AUTH_ENABLED = "true";
+      # Point to your local Ollama instance
+      # OLLAMA_BASE_URL = "http://127.0.0.1:11434";
+    };
+    extraOptions = [
+      "--dns=8.8.8.8"
+      "--dns=1.1.1.1"
+    ];
   };
-  extraOptions = [
-    "--dns=8.8.8.8"
-    "--dns=1.1.1.1"
-  ];
-};
-
-
-
-
-
 
   virtualisation.oci-containers.containers.syncthing = {
     image = "syncthing/syncthing:latest";
@@ -125,30 +100,13 @@ virtualisation.oci-containers.containers.odysseus = {
     };
   };
 
-#.........................
+  #.........................
 
-systemd.tmpfiles.rules = [
+  systemd.tmpfiles.rules = [
     "d /home/yasiru/Music 0755 yasiru users -"
     "d /home/yasiru/docker/navidrome/data 0755 yasiru users -"
-    "d /home/yasiru/docker/slskd/config 0755 yasiru users -"
-    "d /home/yasiru/docker/slskd/downloads 0755 yasiru users -"
-    "d /home/yasiru/docker/soulbeet/data 0755 yasiru users -"
-    "d /home/yasiru/docker/soulbeet/beets 0755 yasiru users -"
     "d /var/lib/ytptube/config 0755 yasiru users -"
-    "d /path/to/jellyfin/yt-queue 0755 yasiru users -"
   ];
-
-  # Properly initialize the Beets config file with actual newlines if it doesn't exist
-  systemd.services.init-soulbeet-config = {
-    description = "Initialize Soulbeet Beets config file";
-    wantedBy = [ "multi-user.target" ];
-    script = ''
-      if [ ! -f /home/yasiru/docker/soulbeet/beets/config.yaml ]; then
-        printf "directory: /music\nlibrary: /config/musiclibrary.blb\nimport:\n  move: yes\n" > /home/yasiru/docker/soulbeet/beets/config.yaml
-        chown -R yasiru:users /home/yasiru/docker/soulbeet/beets
-      fi
-    '';
-  };
 
   # Dedicated Docker network for your media stack so they resolve each other by name
   systemd.services.init-media-network = {
@@ -163,7 +121,6 @@ systemd.tmpfiles.rules = [
     '';
   };
 
-  # Isolated OCI Containers block for just this stack
   virtualisation.oci-containers = {
     containers = {
       navidrome = {
@@ -186,47 +143,10 @@ systemd.tmpfiles.rules = [
           ND_LYRICSPRIORITY = ".ttml,.elrc,.lrc,.srt,.txt,embedded,nd-lyrics";
         };
       };
-
-     slskd = {
-        image = "slskd/slskd:latest";
-        ports = [ "290:5030" ];
-        extraOptions = [ "--network=media-net" ];
-        environment = {
-          SLSKD_REMOTE_CONFIGURATION = "true";
-          SLSKD_WEBSOCKET_AUTHENTICATION_ENABLED = "false"; # or pass an explicit token
-        };
-        volumes = [
-          "/home/yasiru/docker/slskd/config:/app/slskd.conf.d"
-          "/home/yasiru/docker/slskd/downloads:/app/downloads"
-        ];
-      };
-
-      soulbeet = {
-        image = "docker.io/docccccc/soulbeet:latest";
-        ports = [ "280:9765" ];
-        extraOptions = [ "--network=media-net" ];
-        dependsOn = [ "slskd" "navidrome" ];
-        environment = {
-          DATABASE_URL = "sqlite:/data/soulbeet.db";
-          DOWNLOAD_PATH = "/downloads";
-          SECRET_KEY = "change-me-in-production";
-          NAVIDROME_URL = "http://navidrome:4533";
-          BEETS_CONFIG = "/config/config.yaml";
-        };
-        volumes = [
-          "/home/yasiru/docker/soulbeet/data:/data"
-          "/home/yasiru/docker/soulbeet/beets:/config"
-          "/home/yasiru/docker/slskd/downloads:/downloads"
-          "/home/yasiru/Music:/music"
-        ];
-      };
     };
   };
 
-  # Ensure these specific containers wait for the custom network and config file to spin up
   systemd.services.docker-navidrome.after = [ "init-media-network.service" ];
-  systemd.services.docker-slskd.after = [ "init-media-network.service" ];
-  systemd.services.docker-soulbeet.after = [ "init-media-network.service" "init-soulbeet-config.service" ];
   #....................
 
   virtualisation.oci-containers.containers.n8n = {
@@ -315,23 +235,21 @@ systemd.tmpfiles.rules = [
     ];
   };
 
-
-virtualisation.oci-containers.containers.silverbullet = {
-    image = "ghcr.io/silverbulletmd/silverbullet:latest"; #
+  virtualisation.oci-containers.containers.silverbullet = {
+    image = "ghcr.io/silverbulletmd/silverbullet:latest";
     ports = [
-      "250:3000" #
+      "250:3000"
     ];
     volumes = [
-      "/home/yasiru/docker/silverbullet/space:/space" #
+      "/home/yasiru/docker/silverbullet/space:/space"
     ];
-    #  uncomment to require a login
+    # uncomment to require a login
     # environment = {
     #   SB_USER = "yasiru:-password";
     # };
   };
 
-
-virtualisation.oci-containers.containers.lidarr = {
+  virtualisation.oci-containers.containers.lidarr = {
     image = "lscr.io/linuxserver/lidarr:latest";
     autoStart = true;
     ports = [ "8686:8686" ];
@@ -344,11 +262,10 @@ virtualisation.oci-containers.containers.lidarr = {
       "/var/lib/lidarr/config:/config"
       "/home/yasiru/Downloads:/Downloads"
       "/home/yasiru/Music:/Music"
-      
     ];
   };
 
-virtualisation.oci-containers.containers.siyuan = {
+  virtualisation.oci-containers.containers.siyuan = {
     image = "b3log/siyuan:latest";
     autoStart = true;
     ports = [ "6806:6806" ];
@@ -365,7 +282,6 @@ virtualisation.oci-containers.containers.siyuan = {
     ];
   };
 
-  
   virtualisation.oci-containers.containers.qbittorrent = {
     image = "lscr.io/linuxserver/qbittorrent:latest";
     autoStart = true;
@@ -384,14 +300,11 @@ virtualisation.oci-containers.containers.siyuan = {
       "/var/lib/qbittorrent/config:/config"
       "/home/yasiru/Downloads:/Downloads"
       "/home/yasiru/Music:/Music"
-      
     ];
   };
 
   networking.firewall.allowedTCPPorts = [ 8080 6881 ];
   networking.firewall.allowedUDPPorts = [ 6881 ];
-
-
 
   systemd.services.init-nextcloud-network = {
     description = "Create Docker network for Nextcloud";
@@ -440,24 +353,23 @@ virtualisation.oci-containers.containers.siyuan = {
     };
   };
 
-
-virtualisation.oci-containers = {
-    containers.obsidian = {
-      image = "lscr.io/linuxserver/obsidian:latest";
+  virtualisation.oci-containers = {
+    containers.selkies = {
+      image = "lscr.io/linuxserver/baseimage-selkies:ubuntunoble";
       autoStart = true;
       ports = [
         "3000:3000"
         "3001:3001"
       ];
       volumes = [
-        "/var/lib/obsidian-config:/config"
-        "/home/yasiru/Documents/obsidian:/config/vault"
-        "${installAnkiScript}:/custom-cont-init.d/99-install-anki:ro"
+        "/var/lib/selkies-config:/config"
+        "/home/yasiru/Documents:/config/Documents"
       ];
       environment = {
         PUID = "1000";
         PGID = "1000";
         TZ = "Asia/Colombo";
+        TITLE = "Selkies";
         #LIBVA_DRIVER_NAME = "i965";
         #LIBGL_ALWAYS_SOFTWARE = "1";
         #DRINODE = "/dev/dri/renderD128";
@@ -469,7 +381,6 @@ virtualisation.oci-containers = {
       ];
     };
   };
-
 
   virtualisation.oci-containers = {
     containers.ytptube = {
@@ -485,43 +396,9 @@ virtualisation.oci-containers = {
         TZ = "Asia/Colombo";
       };
       extraOptions = [
-    "--dns=8.8.8.8"
-    "--dns=1.1.1.1"
-  ];
-    };
-  };
-
- 
-
-
-#--------auto start thing ----------------------
-
-  # 1. Tell NixOS NOT to start Pinchflat automatically on boot/rebuild
-  virtualisation.oci-containers.containers.pinchflat.autoStart = false;
-
-  # 2. Timer to START Pinchflat at 12:30 AM
-  systemd.timers."pinchflat-night-start" = {
-    wantedBy = [ "timers.target" ];
-    timerConfig = {
-      OnCalendar = "*-*-* 00:30:00"; # Every day at 12:30 AM
-      Unit = "docker-pinchflat.service";
-    };
-  };
-
-  # 3. Timer to STOP Pinchflat at 7:00 AM
-  systemd.timers."pinchflat-morning-stop" = {
-    wantedBy = [ "timers.target" ];
-    timerConfig = {
-      OnCalendar = "*-*-* 07:00:00"; # Every day at 7:00 AM
-      Unit = "pinchflat-stop.service";
-    };
-  };
-
-  # 4. The helper service that actually stops the container
-  systemd.services."pinchflat-stop" = {
-    serviceConfig = {
-      Type = "oneshot";
-      ExecStart = "${pkgs.docker}/bin/docker stop pinchflat";
+        "--dns=8.8.8.8"
+        "--dns=1.1.1.1"
+      ];
     };
   };
 

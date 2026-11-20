@@ -7,6 +7,7 @@ in
 {
   home.packages = with pkgs; [
     pegasus-frontend
+    swaybg # Required by Sway to render image backgrounds
   ];
 
   # 1. Link your local Clean-Covers folder directly (no hash or flake input needed)
@@ -75,6 +76,14 @@ in
     '';
     config = {
       modifier = "Mod4";
+
+      # Completely disable swaybar
+      bars = [];
+
+      # Set wallpaper across all outputs
+      output."*" = {
+        bg = "${iconsDir}/wall.jpg fill";
+      };
 
       startup = [
         { command = "pegasus-fe"; }

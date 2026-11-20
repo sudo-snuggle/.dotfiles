@@ -29,3 +29,32 @@ cp /etc/nixos/hardware-configuration.nix ~/.dotfiles/hosts/$HOST/hardware-config
 git -C ~/.dotfiles add -N .
 sudo nixos-rebuild switch --extra-experimental-features "nix-command flakes" --flake ~/.dotfiles#$HOST
 rm -f ~/.dotfiles/hosts/$HOST/hardware-configuration.nix
+
+
+======================================================================
+HERMES - NIXOS SETUP (AFTER GUI INSTALL)
+======================================================================
+
+1. OPEN TERMINAL & GET GIT + GH
+   nix-shell -p git gh
+
+2. LOGIN & CLONE
+   gh auth login
+   git clone https://github.com/sudo-snuggle/.dotfiles.git ~/.dotfiles
+   cd ~/.dotfiles
+
+3. COPY HARDWARE CONFIG
+   cp /etc/nixos/hardware-configuration.nix hosts/hermes/hardware-configuration.nix
+
+4. STAGE & BUILD FLAKE
+   git add hosts/hermes/hardware-configuration.nix
+   sudo nixos-rebuild switch --flake .#hermes
+
+5. REBOOT
+   sudo reboot
+
+6. PUSH UPDATED HARDWARE CONFIG (AFTER REBOOT)
+   cd ~/.dotfiles
+   git commit -am "Update hermes hardware-configuration.nix"
+   git push
+======================================================================

@@ -1,5 +1,5 @@
 # /etc/nixos/configuration.nix
-# nixos home server — hermes / ganymede
+# nixos home server — hermes
 
 { config, pkgs, lib, ... }:
 
@@ -7,104 +7,114 @@
   imports = [
     ./hardware-configuration.nix
     ../../modules/core/nix-settings.nix
-    ../../modules/users/yasiru.nix
     ../../modules/core/locale.nix
+    ../../modules/users/yasiru.nix
+    ../../modules/boot/grub-default.nix
     ../../modules/server/cockpit.nix
-    #../../modules/server/samba.nix
     ../../modules/server/firewall.nix
     ../../modules/server/ssh.nix
-    ../../modules/boot/grub-default.nix
     ../../modules/server/lid-off.nix
-    #../../modules/server/immich.nix
-    #../../modules/server/nextcloud.nix
-    #../../modules/server/ai.nix
     ../../modules/server/copyparty.nix
     ../../modules/server/printing.nix
+    #../../modules/server/timer.nix
     ../../modules/laptop/tlp-server.nix
     ../../modules/desktop/wm.nix
-    ../../modules/server/timer.nix
-    ../../modules/server/kodi.nix
     ../../modules/desktop/appimage.nix
+    ../../modules/desktop/steam.nix
 
   ];
 
   # ---------- boot & kernel ----------
   boot.kernelParams = [
-    "consoleblank=60"          # Turns off screen after 60s of inactivity
-    "button.lid_init_state=open" # Ignores lid close state on startup
-    "video=eDP-1:d" "video=HDMI-A-1:1920x1080@60"
+    "consoleblank=60"             # Turns off screen after 60s of inactivity
+    "button.lid_init_state=open"  # Ignores lid close state on startup
+    "video=eDP-1:d"
+    "video=HDMI-A-1:1920x1080@60"
   ];
-# ---------- networking ----------
+
+  boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
+
+  # ---------- networking ----------
   networking.hostName = "hermes";
   networking.networkmanager.enable = true;
 
-  networking.networkmanager.ensureProfiles.profiles."Dialog 4G 454" = {
-    connection = {
-      id = "Dialog 4G 454";
-      type = "wifi";
+  networking.networkmanager.ensureProfiles.profiles = {
+    "Dialog 4G 454" = {
+      connection = {
+        id = "Dialog 4G 454";
+        type = "wifi";
+      };
+      wifi = {
+        ssid = "Dialog 4G 454";
+        mode = "infrastructure";
+      };
+      wifi-security = {
+        key-mgmt = "wpa-psk";
+        psk = "2fB5740B";
+      };
+      ipv4 = {
+        method = "manual";
+        address1 = "192.168.8.9/24,192.168.8.1";
+        dns = "127.0.0.1;";
+        ignore-auto-dns = "true";
+      };
     };
-    wifi = {
-      ssid = "Dialog 4G 454";
-      mode = "infrastructure";
-    };
-    wifi-security = {
-      key-mgmt = "wpa-psk";
-      psk = "2fB5740B";
-    };
-    ipv4 = {
-      method = "manual";
-      address1 = "192.168.8.9/24,192.168.8.1";
-      dns = "127.0.0.1;";
-      ignore-auto-dns = "true";
+
+    "SLT-Fiber-2.4G_e130" = {
+      connection = {
+        id = "SLT-Fiber-2.4G_e130";
+        type = "wifi";
+      };
+      wifi = {
+        ssid = "SLT-Fiber-2.4G_e130";
+        mode = "infrastructure";
+      };
+      wifi-security = {
+        key-mgmt = "wpa-psk";
+        psk = "calm6946";
+      };
+      ipv4 = {
+        method = "manual";
+        address1 = "192.168.1.9/24,192.168.1.1";
+        dns = "127.0.0.1;";
+        ignore-auto-dns = "true";
+      };
     };
   };
 
-  networking.networkmanager.ensureProfiles.profiles."SLT-Fiber-2.4G_e130" = {
-  connection = {
-    id = "SLT-Fiber-2.4G_e130";
-    type = "wifi";
-  };
-  wifi = {
-    ssid = "SLT-Fiber-2.4G_e130";
-    mode = "infrastructure";
-  };
-  wifi-security = {
-    key-mgmt = "wpa-psk";
-    psk = "calm6946";
-  };
-  ipv4 = {
-    method = "manual";
-    address1 = "192.168.1.9/24,192.168.1.1";
-    dns = "127.0.0.1;";
-    ignore-auto-dns = "true";
-  };
-};
+  # ---------- shell & autologin ----------
+  services.getty.autologinUser = "yasiru";
 
-  # ---------- tailscale (secure mesh VPN) ----------
-  # Uncomment when ready for encrypted remote access:
-  # services.tailscale.enable = true;
-
-  # ---------- shell ----------
   programs.bash = {
     enable = true;
-    shellAliases = {
-      fih = "fish";
-    };
+    shellAliases.fih = "fish";
   };
-  programs.fish.enable = true;
-users.users.yasiru.shell = pkgs.fish;
 
-services.pipewire = {
-  enable = true;
-  alsa.enable = true;
-  pulse.enable = true;
-};
+  programs.fish = {
+    enable = true;
+    loginShellInit = ''
+      if test -z "$DISPLAY" -a -z "$WAYLAND_DISPLAY" -a "$XDG_VTNR" = "1"
+        exec sway
+      end
+    '';
+  };
 
-systemd.user.services.wireplumber = {
-  after = [ "basic.target" ];
-  wantedBy = [ "default.target" ];
-};
+  users.users.yasiru.shell = pkgs.fish;
 
+  # ---------- audio & graphics (Haswell i5-4210U) ----------
+  services.pipewire = {
+    enable = true;
+    alsa.enable = true;
+    pulse.enable = true;
+  };
+
+  hardware.graphics = {
+    enable = true;
+    extraPackages = with pkgs; [
+      intel-vaapi-driver
+      libvdpau-va-gl
+    ];
+  };
 
   # ---------- docker virtualisation ----------
   virtualisation.docker = {
@@ -115,110 +125,72 @@ systemd.user.services.wireplumber = {
     };
   };
 
-
-  services.flatpak.enable = true;
-
-  # ---------- essential server packages ----------
+  # ---------- packages ----------
   environment.systemPackages = with pkgs; [
-    # Server Management & Hardware
-    cockpit-machines
+    # System & hardware
     brightnessctl
-    
-    # CLI Utilities & Downloaders
+    udiskie
+
+    # CLI utilities
     curl
     wget
     git
     gh
     jq
-    micro
     neovim
     kitty
-    
-    # Media Extraction & Processing
+    yazi
+    p7zip
+    unzip
+
+    # Media & 10-foot HDMI frontend
     yt-dlp
     aria2
     ffmpeg
     cage
-  moonlight-qt
-  libcec
-  feishin
-  vacuum-tube
-
-  jellyfin-media-player
-
-  nwg-launchers
-  feishin
-  yazi
-  p7zip
-  unzip
-  udiskie
-
+    moonlight-qt
+    libcec
+    feishin
+    vacuum-tube
+    jellyfin-media-player
+    nwg-launchers
   ];
 
-  hardware.graphics = {
-  enable = true;
-  enable32Bit = true;
-  extraPackages = with pkgs; [
-    intel-media-driver # For Broadwell (5th gen) and newer
-    intel-vaapi-driver # For Haswell (4th gen HD 4400) / older Intel GPUs
-    libvdpau-va-gl
-  ];
-};
-
-# 1. Ensure the host kernel allows routing/forwarding
-  boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
-
-  # 2. Declare the OpenWrt container
-  virtualisation.oci-containers.containers.openwrt = {
-    image = "quay.io/openwrt/rootfs:latest";
-    autoStart = true;
-    extraOptions = [
-      "--privileged"
-      "--network=host" # Gives OpenWrt direct visibility into host network interfaces
+  # ---------- pi-hole dns ----------
+  services.pihole-ftl = {
+    enable = true;
+    settings = {
+      dns = {
+        upstreams = [ "9.9.9.9" "1.1.1.1" ];
+        listeningMode = "BIND";
+        interface = "wlp9s0";
+      };
+    };
+    lists = [
+      {
+        url = "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts";
+        type = "block";
+        enabled = true;
+        description = "StevenBlack unified";
+      }
+      {
+        url = "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/pro.txt";
+        type = "block";
+        enabled = true;
+        description = "hagezi pro";
+      }
     ];
   };
 
-#kksdd 
-virtualisation.waydroid.enable = true;
-virtualisation.waydroid.package = pkgs.waydroid-nftables;
-
-services.pihole-ftl = {
-  enable = true;
-  settings = {
-    dns = {
-      upstreams = [ "9.9.9.9" "1.1.1.1" ];
-      listeningMode = "BIND";
-      interface = "wlp9s0";
-    };
-  };
-  lists = [
-    { url = "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts";
-      type = "block"; enabled = true; description = "StevenBlack unified"; }
-    #  heavier list:
-    { url = "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/pro.txt";
-      type = "block"; enabled = true; description = "hagezi pro"; }
-  ];
-};
-
-  # Enable the Pi-hole Web UI dashboard on port 7070
   services.pihole-web = {
     enable = true;
     ports = [ "7070" ];
   };
 
   systemd.services.pihole-ftl = {
-  after = [ "network-online.target" ];
-  wants = [ "network-online.target" ];
-};
-
-  
-  nix.gc = {
-  automatic = true;
-  dates = "weekly";
-  options = "--delete-older-than 7d";
-};
-
-nix.settings.auto-optimise-store = true;
+    after = [ "network-online.target" ];
+    wants = [ "network-online.target" ];
+  };
 
   system.stateVersion = "26.05";
 }
