@@ -62,7 +62,7 @@
     requires = [ "mnt-ext.mount" ];
   };
 
-  systemd.services.docker-qbittorrent = {
+systemd.services.docker-qbittorrent = {
     after = [ "mnt-ext.mount" "mnt-ext.automount" ];
     requires = [ "mnt-ext.mount" ];
     preStart = ''
@@ -73,8 +73,17 @@
           -e '/^WebUI\\CSRFProtection=/d' \
           -e '/^WebUI\\AuthSubnetWhitelist=/d' \
           -e '/^WebUI\\AuthSubnetWhitelistEnabled=/d' \
+          -e '/^HostHeaderValidation=/d' \
+          -e '/^CSRFProtection=/d' \
+          -e '/^AuthSubnetWhitelist=/d' \
+          -e '/^AuthSubnetWhitelistEnabled=/d' \
+          -e '/^LocalHostAuth=/d' \
           "$CONF"
-        ${pkgs.gnused}/bin/sed -i '/^\[Preferences\]/a WebUI\\HostHeaderValidation=false\nWebUI\\CSRFProtection=false\nWebUI\\AuthSubnetWhitelist=192.168.1.0/24\nWebUI\\AuthSubnetWhitelistEnabled=true' "$CONF"
+        if ${pkgs.gnugrep}/bin/grep -q '^\[WebUI\]' "$CONF"; then
+          ${pkgs.gnused}/bin/sed -i '/^\[WebUI\]/a HostHeaderValidation=false\nCSRFProtection=false\nLocalHostAuth=false\nAuthSubnetWhitelist=192.168.1.0/24\nAuthSubnetWhitelistEnabled=true' "$CONF"
+        else
+          printf '\n[WebUI]\nHostHeaderValidation=false\nCSRFProtection=false\nLocalHostAuth=false\nAuthSubnetWhitelist=192.168.1.0/24\nAuthSubnetWhitelistEnabled=true\n' >> "$CONF"
+        fi
       fi
     '';
   };
