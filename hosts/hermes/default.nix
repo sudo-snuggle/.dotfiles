@@ -196,5 +196,27 @@
     wants = [ "network-online.target" ];
   };
 
+  zramSwap = {
+  enable = true;
+  algorithm = "zstd";
+  memoryPercent = 50; # Allows up to 2 GB of compressed swap space on a 4 GB system
+};
+
+security.sudo.extraRules = [
+    {
+      users = [ "yasiru" ];
+      commands = [
+        {
+          command = "/run/current-system/sw/bin/systemctl start docker.service";
+          options = [ "NOPASSWD" ];
+        }
+        {
+          command = "/run/current-system/sw/bin/systemctl stop docker.service";
+          options = [ "NOPASSWD" ];
+        }
+      ];
+    }
+  ];
+
   system.stateVersion = "26.05";
 }

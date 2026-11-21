@@ -3,11 +3,13 @@
 let
   iconsDir = "${config.home.homeDirectory}/Downloads/icons";
   tvAppsDir = "${config.home.homeDirectory}/.local/share/tv-apps";
+  factorioLaunchCmd = ''distrobox enter gaming -- "$HOME/.local/share/distrobox/gaming/Games/Factorio/start.sh"'';
 in
 {
   home.packages = with pkgs; [
     pegasus-frontend
     swaybg # Required by Sway to render image backgrounds
+    gamemode # Optional wrapper if you want gamemoderun inside launch scripts
   ];
 
   # 1. Link your local Clean-Covers folder directly (no hash or flake input needed)
@@ -23,11 +25,40 @@ in
     ${tvAppsDir}
   '';
 
-  # Dummy trigger files (required by Pegasus so the tiles show up)
+  # Dummy / launcher trigger files required by Pegasus so tiles appear
   home.file."${tvAppsDir}/yt.sh".text = "";
   home.file."${tvAppsDir}/kitty.sh".text = "";
   home.file."${tvAppsDir}/feishin.sh".text = "";
   home.file."${tvAppsDir}/steam.sh".text = "";
+
+  # Factorio wrapper: stops heavy Docker services if running, launches Distrobox Factorio,
+  # and restores Docker when you exit back to Pegasus.
+  home.file."${tvAppsDir}/factorio.sh" = {
+    executable = true;
+    text = ''
+      #!/usr/bin/env bash
+      set -euo pipefail
+
+      DOCKER_WAS_ACTIVE=0
+      if systemctl is-active --quiet docker.service; then
+        DOCKER_WAS_ACTIVE=1
+        sudo systemctl stop docker.service || true
+      fi
+
+      # Drop clean page cache so Factorio gets contiguous free RAM on a 4 GB box
+      sync
+      echo 3 | sudo tee /proc/sys/vm/drop_caches >/dev/null 2>&1 || true
+
+      cleanup() {
+        if [ "$DOCKER_WAS_ACTIVE" -eq 1 ]; then
+          sudo systemctl start docker.service || true
+        fi
+      }
+      trap cleanup EXIT
+
+      ${factorioLaunchCmd}
+    '';
+  };
 
   # Pegasus collection metadata
   home.file."${tvAppsDir}/metadata.pegasus.txt".text = ''
@@ -65,6 +96,14 @@ in
     assets.tile: ${iconsDir}/steam.png
     assets.logo: ${iconsDir}/steam.png
     assets.background: ${iconsDir}/steam-bg.jpg
+
+    game: Factorio
+    file: factorio.sh
+    launch: ${tvAppsDir}/factorio.sh
+    assets.boxFront: ${iconsDir}/factorio.jpg
+    assets.tile: ${iconsDir}/factorio.jpg
+    assets.logo: ${iconsDir}/factorio.jpg
+    assets.background: ${iconsDir}/factorio-bg.jpg
   '';
 
   # 4. Sway Config (handles fullscreen windows & single-key app closing)
@@ -74,6 +113,9 @@ in
     extraSessionCommands = ''
       export WLR_DRM_DEVICES=/dev/dri/card1
       export WLR_DRM_NO_ATOMIC=1
+      # Avoid unnecessary XWayland overhead when running native Wayland apps/games
+      export SDL_VIDEODRIVER=wayland
+      export CLUTTER_BACKEND=wayland
     '';
     config = {
       modifier = "Mod4";
