@@ -138,6 +138,7 @@ services.flatpak.enable = true;
   udiskie
 
   mullvad-browser
+  moonlight-qt
   ];
 
   # Enable the Virtual KMS display driver
