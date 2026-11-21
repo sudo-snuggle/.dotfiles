@@ -23,7 +23,7 @@
     "d /home/yasiru/docker/open-webui/data 0755 yasiru users -"
     "d /var/lib/ytptube/config 0755 yasiru users -"
     "d /mnt/ext/Documents 0755 yasiru users -"
-    "d /mnt/ext/kiwix 0755 yasiru users -"
+    "d /mnt/ext/Documents/kiwix 0755 yasiru users -"
   ];
 
   # Dedicated Docker network for media containers
@@ -60,6 +60,23 @@
   systemd.services.docker-kiwix = {
     after = [ "mnt-ext.mount" "mnt-ext.automount" ];
     requires = [ "mnt-ext.mount" ];
+  };
+
+  systemd.services.docker-qbittorrent = {
+    after = [ "mnt-ext.mount" "mnt-ext.automount" ];
+    requires = [ "mnt-ext.mount" ];
+    preStart = ''
+      CONF="/var/lib/qbittorrent/config/qBittorrent/qBittorrent.conf"
+      if [ -f "$CONF" ]; then
+        ${pkgs.gnused}/bin/sed -i \
+          -e '/^WebUI\\HostHeaderValidation=/d' \
+          -e '/^WebUI\\CSRFProtection=/d' \
+          -e '/^WebUI\\AuthSubnetWhitelist=/d' \
+          -e '/^WebUI\\AuthSubnetWhitelistEnabled=/d' \
+          "$CONF"
+        ${pkgs.gnused}/bin/sed -i '/^\[Preferences\]/a WebUI\\HostHeaderValidation=false\nWebUI\\CSRFProtection=false\nWebUI\\AuthSubnetWhitelist=192.168.1.0/24\nWebUI\\AuthSubnetWhitelistEnabled=true' "$CONF"
+      fi
+    '';
   };
 
   networking.firewall.allowedTCPPorts = [ 8080 6881 ];
@@ -290,24 +307,7 @@
         "/var/lib/siyuan/workspace:/siyuan/workspace"
       ];
     };
-systemd.services.docker-qbittorrent = {
-    after = [ "mnt-ext.mount" "mnt-ext.automount" ];
-    requires = [ "mnt-ext.mount" ];
-    preStart = ''
-      CONF="/var/lib/qbittorrent/config/qBittorrent/qBittorrent.conf"
-      if [ -f "$CONF" ]; then
-        ${pkgs.gnused}/bin/sed -i \
-          -e '/^WebUI\\HostHeaderValidation=/d' \
-          -e '/^WebUI\\CSRFProtection=/d' \
-          -e '/^WebUI\\AuthSubnetWhitelist=/d' \
-          -e '/^WebUI\\AuthSubnetWhitelistEnabled=/d' \
-          "$CONF"
-        ${pkgs.gnused}/bin/sed -i '/^\[Preferences\]/a WebUI\\HostHeaderValidation=false\nWebUI\\CSRFProtection=false\nWebUI\\AuthSubnetWhitelist=192.168.1.0/24\nWebUI\\AuthSubnetWhitelistEnabled=true' "$CONF"
-      fi
-    '';
-  };
 
-  virtualisation.oci-containers.containers = {
     qbittorrent = {
       image = "lscr.io/linuxserver/qbittorrent:latest";
       autoStart = true;
@@ -326,10 +326,10 @@ systemd.services.docker-qbittorrent = {
         "/var/lib/qbittorrent/config:/config"
         "/home/yasiru/Downloads:/Downloads"
         "/home/yasiru/Music:/Music"
-        "/mnt/ext/kiwix:/kiwix"
+        "/mnt/ext:/hdd"
       ];
     };
-  };
+
     nextcloud_db = {
       image = "postgres:15-alpine";
       extraOptions = [ "--network=nextcloud-net" ];
