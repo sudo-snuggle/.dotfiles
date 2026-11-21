@@ -14,7 +14,7 @@
     ../../modules/laptop/undervolt.nix
     ../../modules/boot/grub-opencore.nix
     ../../modules/desktop/steam.nix
-    ../../modules/server/whales.nix
+    #../../modules/server/whales.nix
     ../../modules/desktop/appimage.nix
     #../../modules/desktop/virt.nix
     #../../modules/desktop/polkit.nix
@@ -139,7 +139,12 @@ services.flatpak.enable = true;
 
   mullvad-browser
   moonlight-qt
+    distrobox
+
   ];
+
+
+  virtualisation.podman.enable = true;
 
   # Enable the Virtual KMS display driver
   boot.kernelModules = [ "vkms" ];
