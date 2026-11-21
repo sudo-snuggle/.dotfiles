@@ -290,7 +290,24 @@
         "/var/lib/siyuan/workspace:/siyuan/workspace"
       ];
     };
+systemd.services.docker-qbittorrent = {
+    after = [ "mnt-ext.mount" "mnt-ext.automount" ];
+    requires = [ "mnt-ext.mount" ];
+    preStart = ''
+      CONF="/var/lib/qbittorrent/config/qBittorrent/qBittorrent.conf"
+      if [ -f "$CONF" ]; then
+        ${pkgs.gnused}/bin/sed -i \
+          -e '/^WebUI\\HostHeaderValidation=/d' \
+          -e '/^WebUI\\CSRFProtection=/d' \
+          -e '/^WebUI\\AuthSubnetWhitelist=/d' \
+          -e '/^WebUI\\AuthSubnetWhitelistEnabled=/d' \
+          "$CONF"
+        ${pkgs.gnused}/bin/sed -i '/^\[Preferences\]/a WebUI\\HostHeaderValidation=false\nWebUI\\CSRFProtection=false\nWebUI\\AuthSubnetWhitelist=192.168.1.0/24\nWebUI\\AuthSubnetWhitelistEnabled=true' "$CONF"
+      fi
+    '';
+  };
 
+  virtualisation.oci-containers.containers = {
     qbittorrent = {
       image = "lscr.io/linuxserver/qbittorrent:latest";
       autoStart = true;
@@ -309,23 +326,10 @@
         "/var/lib/qbittorrent/config:/config"
         "/home/yasiru/Downloads:/Downloads"
         "/home/yasiru/Music:/Music"
+        "/mnt/ext/kiwix:/kiwix"
       ];
-      after = [ "mnt-ext.mount" "mnt-ext.automount" ];
-    requires = [ "mnt-ext.mount" ];
-    preStart = ''
-      CONF="/var/lib/qbittorrent/config/qBittorrent/qBittorrent.conf"
-      if [ -f "$CONF" ]; then
-        ${pkgs.gnused}/bin/sed -i \
-          -e '/^WebUI\\HostHeaderValidation=/d' \
-          -e '/^WebUI\\CSRFProtection=/d' \
-          -e '/^WebUI\\AuthSubnetWhitelist=/d' \
-          -e '/^WebUI\\AuthSubnetWhitelistEnabled=/d' \
-          "$CONF"
-        ${pkgs.gnused}/bin/sed -i '/^\[Preferences\]/a WebUI\\HostHeaderValidation=false\nWebUI\\CSRFProtection=false\nWebUI\\AuthSubnetWhitelist=192.168.1.0/24\nWebUI\\AuthSubnetWhitelistEnabled=true' "$CONF"
-      fi
-    '';
     };
-
+  };
     nextcloud_db = {
       image = "postgres:15-alpine";
       extraOptions = [ "--network=nextcloud-net" ];
