@@ -1,6 +1,17 @@
 { config, pkgs, ... }:
 
 {
+  fileSystems."/mnt/ext" = {
+    device = "/dev/disk/by-uuid/7528885a-e4a8-4f29-a515-ceed08c00a87";
+    fsType = "ext4";
+    options = [
+      "defaults"
+      "nofail"
+      "x-systemd.automount"
+      "x-systemd.idle-timeout=10min"
+    ];
+  };
+
   virtualisation.oci-containers.backend = "docker";
 
   systemd.tmpfiles.rules = [
@@ -11,6 +22,8 @@
     "Z /home/yasiru/docker/syncthing/config 0755 yasiru users -"
     "d /home/yasiru/docker/open-webui/data 0755 yasiru users -"
     "d /var/lib/ytptube/config 0755 yasiru users -"
+    "d /mnt/ext/Documents 0755 yasiru users -"
+    "d /mnt/ext/kiwix 0755 yasiru users -"
   ];
 
   # Dedicated Docker network for media containers
@@ -43,6 +56,11 @@
   };
 
   systemd.services.docker-navidrome.after = [ "init-media-network.service" ];
+
+  systemd.services.docker-kiwix = {
+    after = [ "mnt-ext.mount" "mnt-ext.automount" ];
+    requires = [ "mnt-ext.mount" ];
+  };
 
   networking.firewall.allowedTCPPorts = [ 8080 6881 ];
   networking.firewall.allowedUDPPorts = [ 6881 ];
@@ -379,6 +397,21 @@
       extraOptions = [
         "--add-host=host.docker.internal:host-gateway"
       ];
+    };
+
+    kiwix = {
+      image = "ghcr.io/kiwix/kiwix-serve:latest";
+      autoStart = true;
+      ports = [ "330:8080" ];
+      volumes = [
+        "/mnt/ext/Documents/kiwix:/data:ro"
+      ];
+      cmd = [
+        "*.zim"
+      ];
+      environment = {
+        TZ = "Asia/Colombo";
+      };
     };
   };
 }
