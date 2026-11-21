@@ -68,6 +68,7 @@
     };
 
     pinchflat = {
+      autoStart = false;
       image = "ghcr.io/kieraneglin/pinchflat:latest";
       ports = [ "190:8945" ];
       volumes = [
@@ -100,26 +101,6 @@
         PGID = "1000";
         TZ = "Asia/Colombo";
       };
-    };
-
-    odysseus = {
-      image = "ghcr.io/pewdiepie-archdaemon/odysseus:latest";
-      ports = [
-        "230:7000"
-      ];
-      volumes = [
-        "/home/yasiru/docker/odysseus/data:/app/data"
-        "/home/yasiru/docker/odysseus/config:/app/config"
-      ];
-      environment = {
-        TZ = "Asia/Colombo";
-        AUTH_ENABLED = "true";
-        # OLLAMA_BASE_URL = "http://127.0.0.1:11434";
-      };
-      extraOptions = [
-        "--dns=8.8.8.8"
-        "--dns=1.1.1.1"
-      ];
     };
 
     syncthing = {
