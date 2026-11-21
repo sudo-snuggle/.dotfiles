@@ -310,6 +310,20 @@
         "/home/yasiru/Downloads:/Downloads"
         "/home/yasiru/Music:/Music"
       ];
+      after = [ "mnt-ext.mount" "mnt-ext.automount" ];
+    requires = [ "mnt-ext.mount" ];
+    preStart = ''
+      CONF="/var/lib/qbittorrent/config/qBittorrent/qBittorrent.conf"
+      if [ -f "$CONF" ]; then
+        ${pkgs.gnused}/bin/sed -i \
+          -e '/^WebUI\\HostHeaderValidation=/d' \
+          -e '/^WebUI\\CSRFProtection=/d' \
+          -e '/^WebUI\\AuthSubnetWhitelist=/d' \
+          -e '/^WebUI\\AuthSubnetWhitelistEnabled=/d' \
+          "$CONF"
+        ${pkgs.gnused}/bin/sed -i '/^\[Preferences\]/a WebUI\\HostHeaderValidation=false\nWebUI\\CSRFProtection=false\nWebUI\\AuthSubnetWhitelist=192.168.1.0/24\nWebUI\\AuthSubnetWhitelistEnabled=true' "$CONF"
+      fi
+    '';
     };
 
     nextcloud_db = {
