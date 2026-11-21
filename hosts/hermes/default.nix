@@ -154,7 +154,10 @@
     vacuum-tube
     jellyfin-media-player
     nwg-launchers
+    distrobox
   ];
+
+  virtualisation.podman.enable = true;
 
   # ---------- pi-hole dns ----------
   services.pihole-ftl = {
