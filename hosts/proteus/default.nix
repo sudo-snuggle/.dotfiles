@@ -146,14 +146,15 @@ services.flatpak.enable = true;
   # ---------- gamemode (proteus only in original) ----------
   programs.gamemode.enable = true;
 
-  networking.firewall = {
-    enable = true;
-    allowedTCPPorts = [ 7070 47984 47989 47990 48010 4333];
-    allowedUDPPortRanges = [
-      { from = 47998; to = 48000; }
-      { from = 48002; to = 48010; }
-    ];
-  };
+networking.firewall = {
+  enable = true;
+  allowedTCPPorts = [ 7070 47984 47989 47990 48010 4333 8080 ];
+  allowedUDPPorts = [ 48100 48200 ];
+  allowedUDPPortRanges = [
+    { from = 47998; to = 48000; }
+    { from = 48002; to = 48010; }
+  ];
+};
   # ---------- tailscale ----------
   #services.tailscale.enable = true;
 
