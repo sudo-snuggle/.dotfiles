@@ -3,7 +3,7 @@
 let
   iconsDir = "${config.home.homeDirectory}/Downloads/icons";
   tvAppsDir = "${config.home.homeDirectory}/.local/share/tv-apps";
-  factorioLaunchCmd = ''distrobox enter gaming -- "$HOME/.local/share/distrobox/gaming/Games/Factorio/start.sh"'';
+  factorioLaunchCmd = ''distrobox enter gaming -- "$HOME/.local/share/distrobox/gaming/GOG Games/Factorio/start.sh"'';
 in
 {
   home.packages = with pkgs; [
