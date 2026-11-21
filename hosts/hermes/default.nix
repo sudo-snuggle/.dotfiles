@@ -142,6 +142,7 @@
     yazi
     p7zip
     unzip
+    btop
 
     # Media & 10-foot HDMI frontend
     yt-dlp

@@ -163,6 +163,7 @@
     };
 
     n8n = {
+      autoStart = false;
       image = "docker.n8n.io/n8nio/n8n";
       ports = [
         "150:5678"
@@ -204,6 +205,7 @@
     };
 
     homeassistant = {
+      autoStart = false;
       image = "ghcr.io/home-assistant/home-assistant:stable";
       volumes = [
         "/home/yasiru/docker/homeassistant/data:/config"
@@ -260,7 +262,7 @@
 
     lidarr = {
       image = "lscr.io/linuxserver/lidarr:latest";
-      autoStart = true;
+      autoStart = false;
       ports = [ "8686:8686" ];
       environment = {
         PUID = "1000";
@@ -343,7 +345,7 @@
 
     selkies = {
       image = "lscr.io/linuxserver/baseimage-selkies:ubuntunoble";
-      autoStart = true;
+      autoStart = false;
       ports = [
         "3000:3000"
         "3001:3001"
