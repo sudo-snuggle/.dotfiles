@@ -203,7 +203,7 @@
 };
 
 
-{
+
   fileSystems."/mnt/ext" = {
     device = "/dev/disk/by-uuid/7528885a-e4a8-4f29-a515-ceed08c00a87";
     fsType = "ext4";
@@ -214,7 +214,7 @@
       "x-systemd.idle-timeout=10min"
     ];
   };
-}
+
 
 security.sudo.extraRules = [
     {
