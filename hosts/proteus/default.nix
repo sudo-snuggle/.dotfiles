@@ -14,7 +14,7 @@
     ../../modules/laptop/undervolt.nix
     ../../modules/boot/grub-opencore.nix
     ../../modules/desktop/steam.nix
-    #../../modules/server/ai.nix
+    ../../modules/server/whales.nix
     ../../modules/desktop/appimage.nix
     #../../modules/desktop/virt.nix
     #../../modules/desktop/polkit.nix
