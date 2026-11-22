@@ -140,8 +140,10 @@ services.flatpak.enable = true;
   mullvad-browser
   moonlight-qt
     distrobox
+    boxbuddy
 
     cataclysm-dda
+
 
   ];
 
