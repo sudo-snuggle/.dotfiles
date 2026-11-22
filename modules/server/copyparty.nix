@@ -21,7 +21,8 @@
     "d /home/yasiru/docker/syncthing/config 0755 yasiru users -"
     "Z /home/yasiru/docker/syncthing/config 0755 yasiru users -"
     "d /home/yasiru/docker/open-webui/data 0755 yasiru users -"
-    "d /var/lib/ytptube/config 0755 yasiru users -"
+    "d /var/lib/ytptube/config 0755 1000 1000 -"
+    "d /home/yasiru/Videos 0755 1000 1000 -"
     "d /mnt/ext/Documents 0755 yasiru users -"
     "d /mnt/ext/Documents/kiwix 0755 yasiru users -"
   ];
@@ -62,7 +63,7 @@
     requires = [ "mnt-ext.mount" ];
   };
 
-systemd.services.docker-qbittorrent = {
+  systemd.services.docker-qbittorrent = {
     after = [ "mnt-ext.mount" "mnt-ext.automount" ];
     requires = [ "mnt-ext.mount" ];
     preStart = ''
@@ -104,8 +105,7 @@ systemd.services.docker-qbittorrent = {
         "/home/yasiru/Pictures:/w/Pictures:rw"
         "/home/yasiru/Videos:/w/Videos:rw"
         "/home/yasiru/.dotfiles:/w/.dotfiles:rw"
-       "/mnt/ext:/hdd:ro"
-
+        "/mnt/ext:/hdd:ro"
       ];
       cmd = [
         "-v"
@@ -402,7 +402,7 @@ systemd.services.docker-qbittorrent = {
       ports = [ "270:8081" ];
       volumes = [
         "/var/lib/ytptube/config:/config:rw"
-        "/home/yasiru/Videos/360:/downloads:rw"
+        "/home/yasiru/Videos:/downloads:rw"
       ];
       environment = {
         TZ = "Asia/Colombo";
