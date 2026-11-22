@@ -31,6 +31,8 @@
     "d /home/yasiru/docker/selkies-config 0755 1000 1000 -"
     "d /mnt/ext/Documents 0755 yasiru users -"
     "d /mnt/ext/Documents/kiwix 0755 yasiru users -"
+    "d /home/yasiru/docker/pinchtube/config 0755 1000 1000 -"
+"d /home/yasiru/docker/pinchtube/cache 0755 1000 1000 -"
   ];
 
   # Dedicated Docker network for media containers
@@ -454,5 +456,32 @@
         TZ = "Asia/Colombo";
       };
     };
+
+    
+pinchtube = {
+  image = "ghcr.io/cosmicthing2/pinchtube:latest";
+  autoStart = true;
+
+  ports = [
+    "360:8080"
+  ];
+
+  volumes = [
+    "/home/yasiru/Videos/channels:/media:ro"
+    "/home/yasiru/docker/pinchtube/config:/config:rw"
+    "/home/yasiru/docker/pinchtube/cache:/cache:rw"
+  ];
+
+  environment = {
+    PUID = "1000";
+    PGID = "1000";
+    TZ = "Asia/Colombo";
+    SECURE_COOKIES = "auto";
+    TRUST_PROXY = "false";
+    LOG_LEVEL = "info";
+  };
+};
+
+
   };
 }
