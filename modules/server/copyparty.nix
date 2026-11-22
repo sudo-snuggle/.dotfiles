@@ -17,12 +17,18 @@
   systemd.tmpfiles.rules = [
     "d /home/yasiru/Music 0755 yasiru users -"
     "d /home/yasiru/Documents 0755 yasiru users -"
+    "d /home/yasiru/Videos 0755 1000 1000 -"
     "d /home/yasiru/docker/navidrome/data 0755 yasiru users -"
     "d /home/yasiru/docker/syncthing/config 0755 yasiru users -"
     "Z /home/yasiru/docker/syncthing/config 0755 yasiru users -"
     "d /home/yasiru/docker/open-webui/data 0755 yasiru users -"
-    "d /var/lib/ytptube/config 0755 1000 1000 -"
-    "d /home/yasiru/Videos 0755 1000 1000 -"
+    "d /home/yasiru/docker/ytptube/config 0755 1000 1000 -"
+    "d /home/yasiru/docker/lidarr/config 0755 1000 1000 -"
+    "d /home/yasiru/docker/siyuan/workspace 0755 1000 1000 -"
+    "d /home/yasiru/docker/qbittorrent/config 0755 1000 1000 -"
+    "d /home/yasiru/docker/nextcloud/db 0755 yasiru users -"
+    "d /home/yasiru/docker/nextcloud/data 0755 yasiru users -"
+    "d /home/yasiru/docker/selkies-config 0755 1000 1000 -"
     "d /mnt/ext/Documents 0755 yasiru users -"
     "d /mnt/ext/Documents/kiwix 0755 yasiru users -"
   ];
@@ -67,7 +73,7 @@
     after = [ "mnt-ext.mount" "mnt-ext.automount" ];
     requires = [ "mnt-ext.mount" ];
     preStart = ''
-      CONF="/var/lib/qbittorrent/config/qBittorrent/qBittorrent.conf"
+      CONF="/home/yasiru/docker/qbittorrent/config/qBittorrent/qBittorrent.conf"
       if [ -f "$CONF" ]; then
         ${pkgs.gnused}/bin/sed -i \
           -e '/^WebUI\\HostHeaderValidation=/d' \
@@ -118,7 +124,7 @@
       image = "ghcr.io/kieraneglin/pinchflat:latest";
       ports = [ "190:8945" ];
       volumes = [
-        "/home/yasiru/docker/pinchflat-config:/config"
+        "/home/yasiru/docker/pinchflat/config:/config"
         "/home/yasiru/Videos/channels:/downloads"
       ];
       environment = {
@@ -298,7 +304,7 @@
         TZ = "Asia/Colombo";
       };
       volumes = [
-        "/var/lib/lidarr/config:/config"
+        "/home/yasiru/docker/lidarr/config:/config"
         "/home/yasiru/Downloads:/Downloads"
         "/home/yasiru/Music:/Music"
       ];
@@ -316,7 +322,7 @@
         SIYUAN_WORKSPACE = "/siyuan/workspace";
       };
       volumes = [
-        "/var/lib/siyuan/workspace:/siyuan/workspace"
+        "/home/yasiru/docker/siyuan/workspace:/siyuan/workspace"
       ];
     };
 
@@ -335,7 +341,7 @@
         WEBUI_PORT = "8080";
       };
       volumes = [
-        "/var/lib/qbittorrent/config:/config"
+        "/home/yasiru/docker/qbittorrent/config:/config"
         "/home/yasiru/Downloads:/Downloads"
         "/home/yasiru/Music:/Music"
         "/mnt/ext:/hdd"
@@ -351,7 +357,7 @@
         POSTGRES_PASSWORD = "local_database_password_change_me";
       };
       volumes = [
-        "/var/lib/nextcloud/db:/var/lib/postgresql/data"
+        "/home/yasiru/docker/nextcloud/db:/var/lib/postgresql/data"
       ];
     };
 
@@ -367,7 +373,7 @@
         OVERWRITEPROTOCOL = "http";
       };
       volumes = [
-        "/var/lib/nextcloud/data:/var/www/html"
+        "/home/yasiru/docker/nextcloud/data:/var/www/html"
       ];
       dependsOn = [ "nextcloud_db" ];
     };
@@ -380,7 +386,7 @@
         "3001:3001"
       ];
       volumes = [
-        "/var/lib/selkies-config:/config"
+        "/home/yasiru/docker/selkies-config:/config"
         "/home/yasiru/Documents:/config/Documents"
       ];
       environment = {
@@ -401,7 +407,7 @@
       user = "1000:1000";
       ports = [ "270:8081" ];
       volumes = [
-        "/var/lib/ytptube/config:/config:rw"
+        "/home/yasiru/docker/ytptube/config:/config:rw"
         "/home/yasiru/Videos:/downloads:rw"
       ];
       environment = {
