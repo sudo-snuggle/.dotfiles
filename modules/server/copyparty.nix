@@ -104,6 +104,8 @@ systemd.services.docker-qbittorrent = {
         "/home/yasiru/Pictures:/w/Pictures:rw"
         "/home/yasiru/Videos:/w/Videos:rw"
         "/home/yasiru/.dotfiles:/w/.dotfiles:rw"
+       "/mnt/ext:/hdd:ro"
+
       ];
       cmd = [
         "-v"
