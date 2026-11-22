@@ -152,6 +152,7 @@ systemd.services.docker-qbittorrent = {
     syncthing = {
       image = "syncthing/syncthing:latest";
       hostname = "server-syncthing";
+      autoStart = false;
       ports = [
         "160:8384"
         "22000:22000/tcp"
