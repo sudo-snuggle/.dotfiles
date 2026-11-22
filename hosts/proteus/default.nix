@@ -141,6 +141,8 @@ services.flatpak.enable = true;
   moonlight-qt
     distrobox
 
+    cataclysm-dda
+
   ];
 
 
