@@ -14,21 +14,28 @@
 
   virtualisation.oci-containers.backend = "docker";
 
-  systemd.tmpfiles.rules = [
+systemd.tmpfiles.rules = [
+    "d /home/yasiru/docker 0755 yasiru users -"
     "d /home/yasiru/Music 0755 yasiru users -"
     "d /home/yasiru/Documents 0755 yasiru users -"
     "d /home/yasiru/Videos 0755 1000 1000 -"
+    "Z /home/yasiru/Videos 0755 1000 1000 -"
     "d /home/yasiru/docker/navidrome/data 0755 yasiru users -"
     "d /home/yasiru/docker/syncthing/config 0755 yasiru users -"
     "Z /home/yasiru/docker/syncthing/config 0755 yasiru users -"
     "d /home/yasiru/docker/open-webui/data 0755 yasiru users -"
     "d /home/yasiru/docker/ytptube/config 0755 1000 1000 -"
+    "Z /home/yasiru/docker/ytptube 0755 1000 1000 -"
     "d /home/yasiru/docker/lidarr/config 0755 1000 1000 -"
+    "Z /home/yasiru/docker/lidarr/config 0755 1000 1000 -"
     "d /home/yasiru/docker/siyuan/workspace 0755 1000 1000 -"
+    "Z /home/yasiru/docker/siyuan/workspace 0755 1000 1000 -"
     "d /home/yasiru/docker/qbittorrent/config 0755 1000 1000 -"
+    "Z /home/yasiru/docker/qbittorrent/config 0755 1000 1000 -"
     "d /home/yasiru/docker/nextcloud/db 0755 yasiru users -"
     "d /home/yasiru/docker/nextcloud/data 0755 yasiru users -"
     "d /home/yasiru/docker/selkies-config 0755 1000 1000 -"
+    "Z /home/yasiru/docker/selkies-config 0755 1000 1000 -"
     "d /mnt/ext/Documents 0755 yasiru users -"
     "d /mnt/ext/Documents/kiwix 0755 yasiru users -"
   ];
