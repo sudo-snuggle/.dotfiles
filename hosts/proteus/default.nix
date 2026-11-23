@@ -127,6 +127,7 @@ services.flatpak.enable = true;
     nwg-displays
     kanshi
     supersonic
+    feishin
     
     simple-scan
 
