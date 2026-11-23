@@ -1,8 +1,11 @@
 { config, pkgs, ... }: {
   services.ollama = {
     enable = true;
-    host = "0.0.0.0";
-    port = 300;
+    host = "127.0.0.1";
+    port = 11434;
 
+    loadModels = [
+      "qwen3:0.6b"
+    ];
   };
 }

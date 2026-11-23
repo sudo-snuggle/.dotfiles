@@ -15,6 +15,7 @@
     ../../modules/server/ssh.nix
     ../../modules/server/lid-off.nix
     ../../modules/server/copyparty.nix
+    ../../modules/server/ai.nix
     ../../modules/server/printing.nix
     #../../modules/server/timer.nix
     ../../modules/laptop/tlp-server.nix
