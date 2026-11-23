@@ -6,6 +6,7 @@
 
     loadModels = [
       "qwen3:0.6b"
+      "qwen2.5:1.5b"
     ];
   };
 }
