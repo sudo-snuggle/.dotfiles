@@ -157,6 +157,8 @@
     jellyfin-media-player
     nwg-launchers
     distrobox
+
+    python3
   ];
 
   virtualisation.podman.enable = true;
