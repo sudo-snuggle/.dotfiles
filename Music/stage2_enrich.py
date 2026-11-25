@@ -380,7 +380,6 @@ def embed_tags(
     except Exception as exc:
         print(f"    [WARN] Tag embed failed for {audio_path.name}: {exc}")
 
-
 # ==============================================================================
 # SECTION 5: ALBUM COVER ARTWORK (ANIMATED m8tec + STATIC FALLBACK)
 # ==============================================================================
@@ -450,7 +449,7 @@ def pick_best_hls_variant_url(master_m3u8_url: str, playlist_text: str) -> str:
     return best_url
 
 
-def download_hls_segments_to_temp_mp4(m3u8_url: str, out_mp4: Path) -> bool:
+def download_hls_segments_to_temp_file(m3u8_url: str, out_file: Path) -> bool:
     try:
         r = requests.get(m3u8_url, headers=M8TEC_HEADERS, timeout=20)
         if r.status_code != 200 or "#EXTM3U" not in r.text:
@@ -490,7 +489,7 @@ def download_hls_segments_to_temp_mp4(m3u8_url: str, out_mp4: Path) -> bool:
         if not buf:
             return False
 
-        out_mp4.write_bytes(bytes(buf))
+        out_file.write_bytes(bytes(buf))
         return True
     except Exception:
         return False
@@ -504,10 +503,13 @@ def convert_hls_or_video_to_webp(stream_url: str, dest_webp: Path) -> bool:
 
     with tempfile.TemporaryDirectory() as tmpdir:
         input_target = stream_url
+        is_remote = stream_url.startswith(("http://", "https://"))
+
         if ".m3u8" in stream_url.lower():
-            local_stream = Path(tmpdir) / "stream.mp4"
-            if download_hls_segments_to_temp_mp4(stream_url, local_stream):
+            local_stream = Path(tmpdir) / "stream.ts"
+            if download_hls_segments_to_temp_file(stream_url, local_stream):
                 input_target = str(local_stream)
+                is_remote = False
         elif stream_url.lower().endswith((".mp4", ".m4v", ".mov")):
             try:
                 resp = requests.get(stream_url, headers=M8TEC_HEADERS, timeout=30)
@@ -515,23 +517,17 @@ def convert_hls_or_video_to_webp(stream_url: str, dest_webp: Path) -> bool:
                     local_vid = Path(tmpdir) / "cover.mp4"
                     local_vid.write_bytes(resp.content)
                     input_target = str(local_vid)
+                    is_remote = False
             except Exception:
                 pass
 
         src_w, src_h = probe_video_dimensions(input_target)
         out_w, out_h = clamp_to_600_1024(src_w, src_h)
 
-        cmd = [
-            "ffmpeg",
-            "-y",
-            "-loglevel",
-            "error",
-            "-reconnect",
-            "1",
-            "-reconnect_streamed",
-            "1",
-            "-reconnect_delay_max",
-            "5",
+        cmd = ["ffmpeg", "-y", "-loglevel", "error"]
+        if is_remote:
+            cmd.extend(["-reconnect", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "5"])
+        cmd.extend([
             "-i",
             input_target,
             "-vf",
@@ -542,7 +538,7 @@ def convert_hls_or_video_to_webp(stream_url: str, dest_webp: Path) -> bool:
             "-q:v",
             "80",
             str(tmp_webp),
-        ]
+        ])
         try:
             res = subprocess.run(cmd, timeout=60)
             if res.returncode == 0 and tmp_webp.exists() and tmp_webp.stat().st_size > 0:
@@ -641,7 +637,6 @@ def ensure_cover_webp(
     if fetch_m8tec_animated_webp(artist, album, title, dest_webp):
         return
     save_static_cover_webp(static_covers, dest_webp)
-
 
 # ==============================================================================
 # SECTION 6: LYRICS FETCHING & CLEANUP (.LRC NEXT TO TRACKS)
@@ -751,7 +746,7 @@ def fetch_lyrics_lrc(
 
     return None
 
-    
+
 # ==============================================================================
 # SECTION 7: ALBUM & USER ORCHESTRATION + ENTRYPOINT
 # ==============================================================================
