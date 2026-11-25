@@ -238,8 +238,7 @@
         "140:8081"
       ];
       volumes = [
-        "/home/yasiru/Videos/avg:/videos"
-        "/home/yasiru/Music/down:/music"
+        "/home/yasiru/Downloads:/downloads"
       ];
       environment = {
         DEFAULT_OPTION_AUTO_START = "false";
