@@ -380,7 +380,7 @@ def embed_tags(
     except Exception as exc:
         print(f"    [WARN] Tag embed failed for {audio_path.name}: {exc}")
 # ==============================================================================
-# SECTION 5: ALBUM COVER ART (ANIMATED M8TEC + STATIC ITUNES -> 600x600 cover.webp)
+# SECTION 5: ALBUM COVER ART (DOWNLOAD FIRST -> CONVERT TO 600x600 cover.webp)
 # ==============================================================================
 
 MIN_COVER_PX = 500
@@ -486,54 +486,74 @@ def _probe_image_dimensions(img_path: Path) -> tuple[int, int] | None:
     return None
 
 
-def _is_animated_webp(data: bytes) -> bool:
-    if len(data) < 22 or data[:4] != b"RIFF" or data[8:12] != b"WEBP":
+def _is_animated_webp(path: Path) -> bool:
+    try:
+        data = path.read_bytes()[:24]
+        return (
+            len(data) >= 21
+            and data[:4] == b"RIFF"
+            and data[8:12] == b"WEBP"
+            and data[12:16] == b"VP8X"
+            and bool(data[20] & 0x02)
+        )
+    except Exception:
         return False
-    return data[12:16] == b"VP8X" and bool(data[20] & 0x02)
 
 
-def _encode_hls_to_animated_webp(hls_url: str, webp_target: Path) -> bool:
+def _download_raw_source(url: str, raw_path: Path, is_hls: bool = False) -> bool:
+    raw_path.unlink(missing_ok=True)
+    if is_hls or url.lower().endswith(".m3u8"):
+        if not shutil.which("ffmpeg"):
+            return False
+        tmp_mp4 = raw_path.with_suffix(".dl.mp4")
+        tmp_mp4.unlink(missing_ok=True)
+        try:
+            cmd = [
+                "ffmpeg",
+                "-y",
+                "-loglevel",
+                "error",
+                "-user_agent",
+                USER_AGENT,
+                "-reconnect",
+                "1",
+                "-reconnect_streamed",
+                "1",
+                "-reconnect_delay_max",
+                "5",
+                "-i",
+                url,
+                "-c",
+                "copy",
+                "-movflags",
+                "+faststart",
+                str(tmp_mp4),
+            ]
+            subprocess.run(cmd, check=True, timeout=60)
+            if tmp_mp4.exists() and tmp_mp4.stat().st_size > 0:
+                tmp_mp4.replace(raw_path)
+                return True
+        except Exception:
+            pass
+        finally:
+            tmp_mp4.unlink(missing_ok=True)
+        return False
+
+    try:
+        resp = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=15)
+        if resp.status_code != 200 or not resp.content:
+            return False
+        raw_path.write_bytes(resp.content)
+        return raw_path.stat().st_size > 0
+    except Exception:
+        raw_path.unlink(missing_ok=True)
+        return False
+
+
+def _convert_local_to_webp(raw_path: Path, webp_target: Path, animated: bool) -> bool:
     if not shutil.which("ffmpeg"):
         return False
 
-    tmp_out = webp_target.parent / ".cover_anim_tmp.webp"
-    try:
-        vf = (
-            f"fps=24,"
-            f"scale='if(gt(iw,ih),min({TARGET_COVER_PX},iw),-2)':"
-            f"'if(gt(ih,iw),min({TARGET_COVER_PX},ih),-2)'"
-        )
-        cmd = [
-            "ffmpeg",
-            "-y",
-            "-loglevel",
-            "error",
-            "-i",
-            hls_url,
-            "-vf",
-            vf,
-            "-c:v",
-            "libwebp",
-            "-loop",
-            "0",
-            "-quality",
-            "80",
-            "-an",
-            str(tmp_out),
-        ]
-        subprocess.run(cmd, check=True, timeout=60)
-        dims = _probe_image_dimensions(tmp_out)
-        if not dims or min(dims) < MIN_COVER_PX:
-            tmp_out.unlink(missing_ok=True)
-            return False
-        tmp_out.replace(webp_target)
-        return webp_target.exists() and webp_target.stat().st_size > 0
-    except Exception:
-        tmp_out.unlink(missing_ok=True)
-        return False
-
-
-def _save_static_as_webp(raw_path: Path, data: bytes, webp_target: Path) -> bool:
     dims = _probe_image_dimensions(raw_path)
     if not dims:
         return False
@@ -542,29 +562,62 @@ def _save_static_as_webp(raw_path: Path, data: bytes, webp_target: Path) -> bool
     if min(w, h) < MIN_COVER_PX:
         return False
 
-    needs_downscale = max(w, h) > TARGET_COVER_PX
-    animated = _is_animated_webp(data)
+    tmp_out = webp_target.parent / ".cover_out_tmp.webp"
+    tmp_out.unlink(missing_ok=True)
 
-    if animated and not needs_downscale:
-        raw_path.replace(webp_target)
+    try:
+        if animated:
+            vf = (
+                f"fps=20,"
+                f"scale='if(gt(iw,ih),min({TARGET_COVER_PX},iw),-2)':"
+                f"'if(gt(ih,iw),min({TARGET_COVER_PX},ih),-2)'"
+            )
+            cmd = [
+                "ffmpeg",
+                "-y",
+                "-loglevel",
+                "error",
+                "-i",
+                str(raw_path),
+                "-vf",
+                vf,
+                "-c:v",
+                "libwebp",
+                "-loop",
+                "0",
+                "-quality",
+                "75",
+                "-an",
+                str(tmp_out),
+            ]
+        else:
+            cmd = [
+                "ffmpeg",
+                "-y",
+                "-loglevel",
+                "error",
+                "-i",
+                str(raw_path),
+                "-vf",
+                f"scale='min({TARGET_COVER_PX},iw)':'min({TARGET_COVER_PX},ih)':force_original_aspect_ratio=decrease",
+                "-c:v",
+                "libwebp",
+                "-quality",
+                "88",
+                str(tmp_out),
+            ]
+
+        subprocess.run(cmd, check=True, timeout=60)
+        out_dims = _probe_image_dimensions(tmp_out)
+        if not out_dims or min(out_dims) < MIN_COVER_PX:
+            tmp_out.unlink(missing_ok=True)
+            return False
+
+        tmp_out.replace(webp_target)
         return webp_target.exists() and webp_target.stat().st_size > 0
-
-    if not shutil.which("ffmpeg"):
+    except Exception:
+        tmp_out.unlink(missing_ok=True)
         return False
-
-    cmd = ["ffmpeg", "-y", "-loglevel", "error", "-i", str(raw_path)]
-    if needs_downscale:
-        cmd += [
-            "-vf",
-            f"scale='min({TARGET_COVER_PX},iw)':'min({TARGET_COVER_PX},ih)':force_original_aspect_ratio=decrease",
-        ]
-    if animated:
-        cmd += ["-c:v", "libwebp", "-loop", "0", "-quality", "85"]
-    else:
-        cmd += ["-c:v", "libwebp", "-quality", "88"]
-    cmd.append(str(webp_target))
-    subprocess.run(cmd, check=True)
-    return webp_target.exists() and webp_target.stat().st_size > 0
 
 
 def ensure_cover_webp(
@@ -592,60 +645,49 @@ def ensure_cover_webp(
         return None
 
     target_dir.mkdir(parents=True, exist_ok=True)
+    raw_anim = target_dir / ".cover_raw_anim"
+    raw_static = target_dir / ".cover_raw_static"
 
-    # 1. Animated HLS artwork via artwork.m8tec.top first (+ any animated_covers passed in)
-    m3u8_candidates: list[str] = []
-    for u in [*fetch_m8tec_animated_urls(artist, album, title), *(animated_covers or [])]:
-        if u and u not in m3u8_candidates:
-            m3u8_candidates.append(u)
-
-    for m3u8_url in m3u8_candidates:
-        if _encode_hls_to_animated_webp(m3u8_url, webp_target):
-            print(f"    [COVER] Saved animated {webp_target.name} (m8tec)")
-            return webp_target
-
-    # 2. Static iTunes 600x600bb + static_covers + cover_urls
-    ordered_urls: list[str] = []
-    seen_urls: set[str] = set()
-    for u in [
-        *fetch_itunes_cover_urls(artist, album, TARGET_COVER_PX),
-        *(static_covers or []),
-        *(cover_urls or []),
-    ]:
-        if u and u not in seen_urls:
-            seen_urls.add(u)
-            ordered_urls.append(u)
-
-    if not ordered_urls:
-        return None
-
-    tmp_raw = target_dir / ".cover_raw_tmp"
     try:
-        for url in ordered_urls:
-            try:
-                resp = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=15)
-                if resp.status_code != 200 or not resp.content:
-                    continue
-                data = resp.content
-            except Exception:
-                continue
+        # 1. Download m8tec animated sources locally first, then convert to 600x600 animated webp
+        m3u8_candidates: list[str] = []
+        for u in [*fetch_m8tec_animated_urls(artist, album, title), *(animated_covers or [])]:
+            if u and u not in m3u8_candidates:
+                m3u8_candidates.append(u)
 
-            tmp_raw.write_bytes(data)
-            try:
-                if _save_static_as_webp(tmp_raw, data, webp_target):
-                    kind = "animated" if _is_animated_webp(data) else "static"
+        for m3u8_url in m3u8_candidates:
+            if _download_raw_source(m3u8_url, raw_anim, is_hls=True):
+                if _convert_local_to_webp(raw_anim, webp_target, animated=True):
+                    print(f"    [COVER] Saved animated {webp_target.name} (m8tec)")
+                    return webp_target
+
+        # 2. Download iTunes + static fallback sources locally first, then convert to 600x600 webp
+        ordered_urls: list[str] = []
+        seen_urls: set[str] = set()
+        for u in [
+            *fetch_itunes_cover_urls(artist, album, TARGET_COVER_PX),
+            *(static_covers or []),
+            *(cover_urls or []),
+        ]:
+            if u and u not in seen_urls:
+                seen_urls.add(u)
+                ordered_urls.append(u)
+
+        for url in ordered_urls:
+            if _download_raw_source(url, raw_static, is_hls=False):
+                is_anim = _is_animated_webp(raw_static)
+                if _convert_local_to_webp(raw_static, webp_target, animated=is_anim):
+                    kind = "animated" if is_anim else "static"
                     print(f"    [COVER] Saved {kind} {webp_target.name} (iTunes/fallback)")
                     return webp_target
-            except Exception:
-                pass
     finally:
-        tmp_raw.unlink(missing_ok=True)
+        raw_anim.unlink(missing_ok=True)
+        raw_static.unlink(missing_ok=True)
 
     return None
 
 
 ensure_album_cover = ensure_cover_webp
-
 # ==============================================================================
 # SECTION 6: LYRICS FETCHING & CLEANUP (NEXT TO TRACKS)
 # ==============================================================================
