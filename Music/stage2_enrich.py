@@ -2,8 +2,9 @@
 """
 Stage 2: Enrich ~/Music/<user>/<Artist>/<Album>/ folders with:
   1. Single primary artist tag, genre, and album release year via MusicBrainz.
-  2. Apple Music animated/high-res artwork resized to 600x600 cover.webp.
-  3. Lyrics saved as .lrc next to tracks (local search + syncedlyrics word-synced priority).
+  2. Animated/high-res cover via https://artwork.m8tec.top/ (with Apple/iTunes fallback),
+     kept between 600x600 and 1024x1024 and saved as cover.webp.
+  3. Line-synced lyrics only (no word/character timestamps), saved as .lrc next to tracks.
 """
 
 from __future__ import annotations
@@ -38,20 +39,19 @@ HOME = Path.home()
 MUSIC_ROOT = HOME / "Music"
 DOWNLOADS_DIR = HOME / "Downloads"
 
+ARTWORK_API_BASE = "https://artwork.m8tec.top"
+
 AUDIO_EXTS = {".opus", ".m4a", ".mp3", ".flac", ".ogg", ".wav", ".aac"}
 LYRIC_EXTS = {".lrc", ".elrc", ".ttml"}
 
 USER_AGENT = "HermesMusicOrganizer/1.0 (local-homelab@example.invalid)"
 MB_HEADERS = {"User-Agent": USER_AGENT, "Accept": "application/json"}
-ITUNES_HEADERS = {"User-Agent": USER_AGENT}
-AMP_HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) "
-        "AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148"
-    ),
-    "Origin": "https://music.apple.com",
-    "Referer": "https://music.apple.com/",
+M8TEC_HEADERS = {
+    "User-Agent": USER_AGENT,
+    "Accept": "application/json, text/plain, */*",
+    "Referer": f"{ARTWORK_API_BASE}/",
 }
+ITUNES_HEADERS = {"User-Agent": USER_AGENT}
 
 
 def primary_artist_only(raw_artist: str | None) -> str:
@@ -61,11 +61,37 @@ def primary_artist_only(raw_artist: str | None) -> str:
     return first if first else "Unknown Artist"
 
 
-def normalize_lyric_dest_name(fname: str) -> str:
-    """Converts .lrc.txt -> .lrc while keeping .elrc, .lrc, and .ttml extensions."""
-    if re.search(r"\.lrc\.txt$", fname, flags=re.IGNORECASE):
-        return re.sub(r"\.lrc\.txt$", ".lrc", fname, flags=re.IGNORECASE)
-    return fname
+def to_line_synced_lrc(raw_text: str) -> str:
+    """
+    Converts lyrics into line-synced .lrc format only:
+    - Strips inline word/character timestamps like <00:12.34> or [00:12.34] mid-line
+    - Removes TTML XML tags if a .ttml file was found locally
+    - Keeps standard line timestamps like [00:12.34] Lyric line
+    """
+    text = raw_text.replace("\r\n", "\n").replace("\r", "\n")
+
+    # Strip inline word-level <mm:ss.xx> tags
+    text = re.sub(r"<\d{1,2}:\d{2}(?:\.\d{1,3})?>", "", text)
+
+    # Strip inline [mm:ss.xx] tags that appear after a leading line timestamp
+    cleaned_lines: list[str] = []
+    for line in text.split("\n"):
+        stripped = line.strip()
+        if not stripped:
+            continue
+        # If line starts with a line timestamp, keep leading [ts] and remove inline [ts] inside text
+        m = re.match(r"^(\[\d{1,2}:\d{2}(?:\.\d{1,3})?\])\s*(.*)$", stripped)
+        if m:
+            lead_ts, body = m.group(1), m.group(2)
+            body = re.sub(r"\[\d{1,2}:\d{2}(?:\.\d{1,3})?\]", "", body).strip()
+            cleaned_lines.append(f"{lead_ts} {body}".strip())
+        else:
+            # Drop raw XML/TTML markup lines if any
+            if stripped.startswith("<") and stripped.endswith(">"):
+                continue
+            cleaned_lines.append(stripped)
+
+    return "\n".join(cleaned_lines).strip()
 
 
 def embed_tags(
@@ -204,24 +230,53 @@ def lookup_musicbrainz_album(artist: str, album: str) -> tuple[str | None, str |
         return None, None
 
 
-def save_600x600_webp_from_bytes(img_bytes: bytes, dest_webp: Path) -> bool:
+def save_bounded_webp_from_image(im: Image.Image, dest_webp: Path) -> tuple[bool, tuple[int, int] | None]:
+    """
+    Keeps whatever size the source has if already between 600x600 and 1024x1024;
+    otherwise clamps/scales proportionally into [600, 1024] and saves as WebP.
+    """
+    try:
+        rgb = im.convert("RGB")
+        w, h = rgb.size
+        if w <= 0 or h <= 0:
+            return False, None
+
+        min_dim = min(w, h)
+        max_dim = max(w, h)
+
+        if min_dim < 600:
+            scale = 600.0 / min_dim
+            new_w = max(600, min(1024, round(w * scale)))
+            new_h = max(600, min(1024, round(h * scale)))
+            rgb = rgb.resize((new_w, new_h), Image.Resampling.LANCZOS)
+        elif max_dim > 1024:
+            scale = 1024.0 / max_dim
+            new_w = max(600, min(1024, round(w * scale)))
+            new_h = max(600, min(1024, round(h * scale)))
+            rgb = rgb.resize((new_w, new_h), Image.Resampling.LANCZOS)
+
+        rgb.save(dest_webp, format="WEBP", quality=90, method=6)
+        return True, rgb.size
+    except Exception as exc:
+        print(f"    [WARN] WebP save failed: {exc}")
+        return False, None
+
+
+def save_bounded_webp_from_bytes(img_bytes: bytes, dest_webp: Path) -> tuple[bool, tuple[int, int] | None]:
     try:
         with Image.open(io.BytesIO(img_bytes)) as im:
-            rgb = im.convert("RGB")
-            resized = rgb.resize((600, 600), Image.Resampling.LANCZOS)
-            resized.save(dest_webp, format="WEBP", quality=90, method=6)
-        return True
+            return save_bounded_webp_from_image(im, dest_webp)
     except Exception as exc:
-        print(f"    [WARN] Failed converting image to 600x600 webp: {exc}")
-        return False
+        print(f"    [WARN] Failed opening image bytes: {exc}")
+        return False, None
 
 
-def extract_first_frame_webp_from_video(video_bytes: bytes, dest_webp: Path) -> bool:
+def extract_frame_webp_from_video(video_bytes: bytes, dest_webp: Path) -> tuple[bool, tuple[int, int] | None]:
     if shutil.which("ffmpeg") is None:
-        return False
+        return False, None
     try:
         with tempfile.TemporaryDirectory() as tmpdir:
-            vid_path = Path(tmpdir) / "motion.mp4"
+            vid_path = Path(tmpdir) / "animated_cover.mp4"
             frame_png = Path(tmpdir) / "frame.png"
             vid_path.write_bytes(video_bytes)
 
@@ -234,21 +289,101 @@ def extract_first_frame_webp_from_video(video_bytes: bytes, dest_webp: Path) -> 
                 "1",
                 str(frame_png),
             ]
-            res = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=20)
+            res = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=25)
             if res.returncode != 0 or not frame_png.exists():
-                return False
-            return save_600x600_webp_from_bytes(frame_png.read_bytes(), dest_webp)
+                return False, None
+            return save_bounded_webp_from_bytes(frame_png.read_bytes(), dest_webp)
     except Exception:
-        return False
+        return False, None
 
 
-def fetch_apple_music_cover_webp(artist: str, album: str, dest_webp: Path) -> bool:
-    if dest_webp.exists():
-        return True
+def collect_urls_from_obj(obj: Any, found: list[str]) -> None:
+    if isinstance(obj, str):
+        s = obj.strip()
+        if s.startswith("http://") or s.startswith("https://"):
+            if any(ext in s.lower() for ext in (".m3u8", ".mp4", ".m4v", ".mov", ".webp", ".jpg", ".jpeg", ".png")):
+                found.append(s)
+    elif isinstance(obj, dict):
+        for v in obj.values():
+            collect_urls_from_obj(v, found)
+    elif isinstance(obj, list):
+        for v in obj:
+            collect_urls_from_obj(v, found)
 
+
+def fetch_m8tec_animated_cover(artist: str, album: str, dest_webp: Path) -> bool:
+    """Queries https://artwork.m8tec.top/ for animated/album artwork."""
+    clean_artist = primary_artist_only(artist)
+    query = f"{clean_artist} {album}".strip()
+
+    endpoints = [
+        (f"{ARTWORK_API_BASE}/api/search", {"q": query, "term": query}),
+        (f"{ARTWORK_API_BASE}/search", {"q": query, "term": query}),
+        (f"{ARTWORK_API_BASE}/api/artwork", {"q": query, "artist": clean_artist, "album": album}),
+    ]
+
+    candidate_urls: list[str] = []
+
+    for url, params in endpoints:
+        try:
+            resp = requests.get(url, params=params, headers=M8TEC_HEADERS, timeout=15)
+            if resp.status_code != 200:
+                continue
+            ctype = resp.headers.get("Content-Type", "").lower()
+            if "json" in ctype or resp.text.strip().startswith(("{", "[")):
+                collect_urls_from_obj(resp.json(), candidate_urls)
+        except Exception:
+            continue
+
+    # Also scrape any direct media/image URLs on the search page response
+    try:
+        page_resp = requests.get(
+            ARTWORK_API_BASE,
+            params={"q": query},
+            headers=M8TEC_HEADERS,
+            timeout=15,
+        )
+        if page_resp.status_code == 200 and page_resp.text:
+            for m in re.findall(r'https?://[^\s"\'<>]+', page_resp.text):
+                if any(ext in m.lower() for ext in (".m3u8", ".mp4", ".m4v", ".mov", ".webp", ".jpg", ".jpeg", ".png")):
+                    candidate_urls.append(m)
+    except Exception:
+        pass
+
+    seen: set[str] = set()
+    for media_url in candidate_urls:
+        if media_url in seen:
+            continue
+        seen.add(media_url)
+        low = media_url.lower()
+
+        if any(ext in low for ext in (".mp4", ".m4v", ".mov", ".m3u8")):
+            try:
+                m_resp = requests.get(media_url, headers=M8TEC_HEADERS, timeout=25)
+                if m_resp.status_code == 200 and m_resp.content:
+                    ok, sz = extract_frame_webp_from_video(m_resp.content, dest_webp)
+                    if ok:
+                        print(f"    [ART] Saved {sz[0]}x{sz[1]} cover.webp from m8tec animated cover")
+                        return True
+            except Exception:
+                continue
+        elif any(ext in low for ext in (".webp", ".jpg", ".jpeg", ".png")):
+            try:
+                i_resp = requests.get(media_url, headers=M8TEC_HEADERS, timeout=15)
+                if i_resp.status_code == 200 and i_resp.content:
+                    ok, sz = save_bounded_webp_from_bytes(i_resp.content, dest_webp)
+                    if ok:
+                        print(f"    [ART] Saved {sz[0]}x{sz[1]} cover.webp from m8tec")
+                        return True
+            except Exception:
+                continue
+
+    return False
+
+
+def fetch_itunes_fallback_cover(artist: str, album: str, dest_webp: Path) -> bool:
     clean_artist = primary_artist_only(artist)
     term = f"{clean_artist} {album}".strip()
-
     try:
         resp = requests.get(
             "https://itunes.apple.com/search",
@@ -262,37 +397,37 @@ def fetch_apple_music_cover_webp(artist: str, album: str, dest_webp: Path) -> bo
         if not results:
             return False
 
-        item = results[0]
-
-        for motion_key in ("motionArtworkUrl", "animatedArtworkUrl", "previewUrl"):
-            m_url = item.get(motion_key)
-            if isinstance(m_url, str) and (".mp4" in m_url or ".m4v" in m_url or ".mov" in m_url):
-                try:
-                    m_resp = requests.get(m_url, headers=AMP_HEADERS, timeout=20)
-                    if m_resp.status_code == 200 and m_resp.content:
-                        if extract_first_frame_webp_from_video(m_resp.content, dest_webp):
-                            print("    [ART] Saved 600x600 cover.webp (from motion cover)")
-                            return True
-                except Exception:
-                    pass
-
-        art_url = item.get("artworkUrl100") or item.get("artworkUrl60")
+        art_url = results[0].get("artworkUrl100") or results[0].get("artworkUrl60")
         if not art_url:
             return False
 
-        hi_res_url = re.sub(r"/\d+x\d+bb\.", "/1200x1200bb.", art_url)
-        img_resp = requests.get(hi_res_url, headers=ITUNES_HEADERS, timeout=15)
-        if img_resp.status_code != 200 or not img_resp.content:
-            img_resp = requests.get(art_url, headers=ITUNES_HEADERS, timeout=15)
+        # Prefer 1000x1000 or 800x800 (already in 600..1024 range), fallback to original
+        for size_tag in ("1000x1000bb", "800x800bb", "600x600bb"):
+            candidate_url = re.sub(r"/\d+x\d+bb\.", f"/{size_tag}.", art_url)
+            img_resp = requests.get(candidate_url, headers=ITUNES_HEADERS, timeout=15)
+            if img_resp.status_code == 200 and img_resp.content:
+                ok, sz = save_bounded_webp_from_bytes(img_resp.content, dest_webp)
+                if ok:
+                    print(f"    [ART] Saved {sz[0]}x{sz[1]} cover.webp")
+                    return True
 
+        img_resp = requests.get(art_url, headers=ITUNES_HEADERS, timeout=15)
         if img_resp.status_code == 200 and img_resp.content:
-            if save_600x600_webp_from_bytes(img_resp.content, dest_webp):
-                print("    [ART] Saved 600x600 cover.webp")
+            ok, sz = save_bounded_webp_from_bytes(img_resp.content, dest_webp)
+            if ok:
+                print(f"    [ART] Saved {sz[0]}x{sz[1]} cover.webp")
                 return True
     except Exception as exc:
-        print(f"    [WARN] Apple Music cover lookup failed for '{term}': {exc}")
-
+        print(f"    [WARN] Fallback cover lookup failed for '{term}': {exc}")
     return False
+
+
+def fetch_cover_webp(artist: str, album: str, dest_webp: Path) -> bool:
+    if dest_webp.exists():
+        return True
+    if fetch_m8tec_animated_cover(artist, album, dest_webp):
+        return True
+    return fetch_itunes_fallback_cover(artist, album, dest_webp)
 
 
 def collect_local_lyrics_for_track(
@@ -302,6 +437,10 @@ def collect_local_lyrics_for_track(
 ) -> Path | None:
     target_lrc = album_dir / f"{track_stem}.lrc"
     if target_lrc.exists() and target_lrc.stat().st_size > 0:
+        # Ensure existing file only has line-synced content
+        existing_clean = to_line_synced_lrc(target_lrc.read_text(encoding="utf-8", errors="ignore"))
+        if existing_clean:
+            target_lrc.write_text(existing_clean + "\n", encoding="utf-8")
         return target_lrc
 
     candidates = {track_stem.lower().strip(), title.lower().strip()}
@@ -323,9 +462,10 @@ def collect_local_lyrics_for_track(
                 if any(c in base or base in c for c in candidates):
                     src = Path(root) / fname
                     try:
-                        content = src.read_text(encoding="utf-8", errors="ignore").strip()
-                        if content:
-                            target_lrc.write_text(content + "\n", encoding="utf-8")
+                        raw = src.read_text(encoding="utf-8", errors="ignore").strip()
+                        line_synced = to_line_synced_lrc(raw)
+                        if line_synced:
+                            target_lrc.write_text(line_synced + "\n", encoding="utf-8")
                             if src.parent != album_dir.resolve() and DOWNLOADS_DIR.resolve() in src.resolve().parents:
                                 src.unlink()
                             return target_lrc
@@ -341,8 +481,14 @@ def fetch_lyrics_as_lrc(
     track_stem: str,
     album_dir: Path,
 ) -> Path | None:
+    """
+    Saves line-synced lyrics only next to the track with .lrc extension.
+    """
     dest_lrc = album_dir / f"{track_stem}.lrc"
     if dest_lrc.exists() and dest_lrc.stat().st_size > 0:
+        existing_clean = to_line_synced_lrc(dest_lrc.read_text(encoding="utf-8", errors="ignore"))
+        if existing_clean:
+            dest_lrc.write_text(existing_clean + "\n", encoding="utf-8")
         return dest_lrc
 
     local_found = collect_local_lyrics_for_track(track_stem, title, album_dir)
@@ -359,16 +505,17 @@ def fetch_lyrics_as_lrc(
     ]
 
     for query in queries:
-        for enhanced_flag in (True, False):
-            try:
-                lyrics_text = syncedlyrics.search(query, enhanced=enhanced_flag)
-                if lyrics_text and lyrics_text.strip():
-                    dest_lrc.write_text(lyrics_text.strip() + "\n", encoding="utf-8")
-                    mode = "word-synced/enhanced" if enhanced_flag else "synced"
-                    print(f"    [LYRICS] Saved {dest_lrc.name} ({mode})")
+        try:
+            # enhanced=False requests standard line-synced lyrics rather than word/character synced
+            lyrics_text = syncedlyrics.search(query, enhanced=False)
+            if lyrics_text and lyrics_text.strip():
+                line_synced = to_line_synced_lrc(lyrics_text)
+                if line_synced:
+                    dest_lrc.write_text(line_synced + "\n", encoding="utf-8")
+                    print(f"    [LYRICS] Saved {dest_lrc.name} (line-synced)")
                     return dest_lrc
-            except Exception as exc:
-                print(f"    [WARN] syncedlyrics error ({query}, enhanced={enhanced_flag}): {exc}", file=sys.stderr)
+        except Exception as exc:
+            print(f"    [WARN] syncedlyrics error ({query}): {exc}", file=sys.stderr)
 
     return None
 
@@ -406,7 +553,7 @@ def process_album_folder(album_dir: Path) -> None:
         print(f"    [MB] Genre={genre or 'N/A'} | Year={year or 'N/A'}")
 
     cover_webp = album_dir / "cover.webp"
-    fetch_apple_music_cover_webp(inferred_artist, inferred_album, cover_webp)
+    fetch_cover_webp(inferred_artist, inferred_album, cover_webp)
 
     for audio_path in audio_files:
         m_entry = manifest_tracks.get(audio_path.name, {})

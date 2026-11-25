@@ -34,6 +34,7 @@
     "d /home/yasiru/docker/pinchtube/config 0755 1000 1000 -"
 "d /home/yasiru/docker/pinchtube/cache 0755 1000 1000 -"
 "d /home/yasiru/Downloads/metube 0755 1000 1000 -"
+"d /home/yasiru/Music 0755 yasiru users -"
   ];
 
   # Dedicated Docker network for media containers

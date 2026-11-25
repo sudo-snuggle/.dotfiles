@@ -2,6 +2,7 @@
 """
 Stage 1: Organize per-user MeTube downloads (~/Downloads/metube/<user>)
 into ~/Music/<user>/<Artist>/<Album>/ and move files cleanly.
+Ignores stray root items and any directory with 'album' in its name at metube root.
 """
 
 from __future__ import annotations
@@ -79,6 +80,7 @@ def read_audio_metadata(audio_path: Path) -> dict[str, str]:
                 artist = primary_artist_only(raw_artist)
             if raw_title:
                 title = raw_title
+            # Even singles/tracks use their album tag if present; otherwise track name becomes album name
             album = raw_album if raw_album else title
     except Exception as exc:
         print(f"  [WARN] Could not read tags from {audio_path.name}: {exc}")
@@ -165,6 +167,8 @@ def cleanup_empty_dirs(root_dir: Path) -> None:
 def process_user_folder(user_down_dir: Path) -> None:
     user_name = user_down_dir.name
     user_music_dir = MUSIC_ROOT / user_name
+    user_music_dir.mkdir(parents=True, exist_ok=True)
+
     print(f"\n=== [Stage 1] User: {user_name} ===")
     print(f"Source : {user_down_dir}")
     print(f"Target : {user_music_dir}")
@@ -246,13 +250,24 @@ def process_user_folder(user_down_dir: Path) -> None:
     cleanup_empty_dirs(user_down_dir)
 
 
+def is_valid_user_dir(entry: Path) -> bool:
+    if not entry.is_dir() or entry.name.startswith("."):
+        return False
+    # Ignore stray folders that have 'album' in their name at ~/Downloads/metube/ root
+    if "album" in entry.name.lower():
+        return False
+    return True
+
+
 def main() -> None:
     if not METUBE_ROOT.exists():
         print(f"MeTube download directory not found: {METUBE_ROOT}")
         return
 
+    MUSIC_ROOT.mkdir(parents=True, exist_ok=True)
+
     user_dirs = sorted(
-        [p for p in METUBE_ROOT.iterdir() if p.is_dir() and not p.name.startswith(".")],
+        [p for p in METUBE_ROOT.iterdir() if is_valid_user_dir(p)],
         key=lambda p: p.name.lower(),
     )
 
