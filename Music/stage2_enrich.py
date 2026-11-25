@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
-Stage 2: Enrich ~/Music/<user>/<Artist>/<Album>/ folders with:
-  1. Single primary artist tag, genre, and album release year via MusicBrainz.
-  2. Animated/high-res cover via https://artwork.m8tec.top/ (with Apple/iTunes fallback),
+Stage 2: Enrich ~/Music/<user>/<Artist>/<Album>/ folders:
+  1. Single primary artist tag, clean genres, and album release year (Last.fm + MusicBrainz/iTunes/Deezer).
+  2. Animated/high-res cover via https://artwork.m8tec.top/api/v1/artwork/search (with static fallback),
      kept between 600x600 and 1024x1024 and saved as cover.webp.
-  3. Line-synced lyrics only (no word/character timestamps), saved as .lrc next to tracks.
+  3. Syllable-synced lyrics kept intact (enhanced=True first, line-synced fallback), saved as .lrc next to tracks.
+  4. Writes 'script .txt' in processed album folders and skips any album that already has 'script .txt'.
 """
 
 from __future__ import annotations
@@ -16,10 +17,10 @@ import re
 import shutil
 import subprocess
 import sys
-import tempfile
 import time
 from pathlib import Path
 from typing import Any
+from urllib.parse import urljoin
 
 import requests
 from mutagen import File as MutagenFile
@@ -34,17 +35,26 @@ try:
 except ImportError:
     syncedlyrics = None
 
+# ==============================================================================
+# FILL IN YOUR FREE LAST.FM API CREDENTIALS HERE
+# ==============================================================================
+LASTFM_API_KEY = "956a19b94112e184f4dca4a0dd015980"
+LASTFM_API_SECRET = "6bfc4969f1942cb838e45c68feef40ca"
+# ==============================================================================
+
 SCRIPT_DIR = Path(__file__).resolve().parent  # ~/.dotfiles/Music
 HOME = Path.home()
 MUSIC_ROOT = HOME / "Music"
 DOWNLOADS_DIR = HOME / "Downloads"
 
 ARTWORK_API_BASE = "https://artwork.m8tec.top"
+ARTWORK_SEARCH_URL = f"{ARTWORK_API_BASE}/api/v1/artwork/search"
+DONE_MARKER_NAME = "script .txt"
 
 AUDIO_EXTS = {".opus", ".m4a", ".mp3", ".flac", ".ogg", ".wav", ".aac"}
 LYRIC_EXTS = {".lrc", ".elrc", ".ttml"}
 
-USER_AGENT = "HermesMusicOrganizer/1.0 (local-homelab@example.invalid)"
+USER_AGENT = "HermesMusicOrganizer/3.0 (local-homelab@example.invalid)"
 MB_HEADERS = {"User-Agent": USER_AGENT, "Accept": "application/json"}
 M8TEC_HEADERS = {
     "User-Agent": USER_AGENT,
@@ -52,6 +62,35 @@ M8TEC_HEADERS = {
     "Referer": f"{ARTWORK_API_BASE}/",
 }
 ITUNES_HEADERS = {"User-Agent": USER_AGENT}
+
+JUNK_GENRES = {
+    "music",
+    "bonus track",
+    "bonus tracks",
+    "seen live",
+    "favorites",
+    "favourite",
+    "favourites",
+    "albums i own",
+    "under 2000 listeners",
+    "spotify",
+    "youtube",
+    "apple music",
+    "remastered",
+    "explicit",
+    "clean",
+    "album",
+    "single",
+    "ep",
+    "soundtrack",
+    "live",
+    "instrumental",
+    "acoustic",
+    "karaoke",
+    "all",
+    "other",
+    "pop/rock",
+}
 
 
 def primary_artist_only(raw_artist: str | None) -> str:
@@ -61,37 +100,57 @@ def primary_artist_only(raw_artist: str | None) -> str:
     return first if first else "Unknown Artist"
 
 
-def to_line_synced_lrc(raw_text: str) -> str:
-    """
-    Converts lyrics into line-synced .lrc format only:
-    - Strips inline word/character timestamps like <00:12.34> or [00:12.34] mid-line
-    - Removes TTML XML tags if a .ttml file was found locally
-    - Keeps standard line timestamps like [00:12.34] Lyric line
-    """
-    text = raw_text.replace("\r\n", "\n").replace("\r", "\n")
+def clean_genre_list(raw_genres: list[str], artist: str, album: str) -> list[str]:
+    blocked = {
+        artist.lower().strip(),
+        primary_artist_only(artist).lower().strip(),
+        album.lower().strip(),
+        *JUNK_GENRES,
+    }
+    cleaned: list[str] = []
+    seen: set[str] = set()
 
-    # Strip inline word-level <mm:ss.xx> tags
-    text = re.sub(r"<\d{1,2}:\d{2}(?:\.\d{1,3})?>", "", text)
-
-    # Strip inline [mm:ss.xx] tags that appear after a leading line timestamp
-    cleaned_lines: list[str] = []
-    for line in text.split("\n"):
-        stripped = line.strip()
-        if not stripped:
-            continue
-        # If line starts with a line timestamp, keep leading [ts] and remove inline [ts] inside text
-        m = re.match(r"^(\[\d{1,2}:\d{2}(?:\.\d{1,3})?\])\s*(.*)$", stripped)
-        if m:
-            lead_ts, body = m.group(1), m.group(2)
-            body = re.sub(r"\[\d{1,2}:\d{2}(?:\.\d{1,3})?\]", "", body).strip()
-            cleaned_lines.append(f"{lead_ts} {body}".strip())
-        else:
-            # Drop raw XML/TTML markup lines if any
-            if stripped.startswith("<") and stripped.endswith(">"):
+    for g in raw_genres:
+        for part in re.split(r"[,;/|]+", str(g)):
+            item = re.sub(r"\s+", " ", part).strip()
+            low = item.lower()
+            if not item or len(item) < 2 or len(item) > 35:
                 continue
-            cleaned_lines.append(stripped)
+            if low in blocked or low in seen or item.isdigit():
+                continue
+            if any(word in low for word in ("2000 listeners", "seen live", "favorites", "remaster")):
+                continue
+            seen.add(low)
+            cleaned.append(item.title() if item.islower() else item)
+            if len(cleaned) >= 3:
+                return cleaned
+    return cleaned
 
-    return "\n".join(cleaned_lines).strip()
+
+def cleanup_junk_lyrics_in_album(album_dir: Path, audio_files: list[Path]) -> None:
+    """
+    Removes leftover .lrc.txt files and duplicate short/junk .lrc files inside album_dir
+    when a matching full track-stem .lrc already exists. Preserves syllable-synced formatting.
+    """
+    for p in list(album_dir.iterdir()):
+        if not p.is_file():
+            continue
+        if p.name.lower().endswith(".lrc.txt"):
+            p.unlink(missing_ok=True)
+
+    stems = {a.stem.lower().strip() for a in audio_files}
+    titles_only = {
+        a.stem.split(" - ", 1)[1].lower().strip()
+        for a in audio_files
+        if " - " in a.stem
+    }
+
+    for p in list(album_dir.iterdir()):
+        if not p.is_file() or p.suffix.lower() != ".lrc":
+            continue
+        p_stem = p.stem.lower().strip()
+        if p_stem in titles_only and any(s.startswith(p_stem + " - ") for s in stems):
+            p.unlink(missing_ok=True)
 
 
 def embed_tags(
@@ -99,7 +158,7 @@ def embed_tags(
     artist: str,
     album: str,
     title: str,
-    genre: str | None,
+    genres: list[str],
     year: str | None,
 ) -> None:
     clean_artist = primary_artist_only(artist)
@@ -113,8 +172,8 @@ def embed_tags(
             audio.tags["artist"] = [clean_artist]
             audio.tags["album"] = [album]
             audio.tags["title"] = [title]
-            if genre:
-                audio.tags["genre"] = [genre]
+            if genres:
+                audio.tags["genre"] = list(genres)
             if year:
                 audio.tags["date"] = [year]
             audio.save()
@@ -127,8 +186,8 @@ def embed_tags(
             audio.tags["artist"] = [clean_artist]
             audio.tags["album"] = [album]
             audio.tags["title"] = [title]
-            if genre:
-                audio.tags["genre"] = [genre]
+            if genres:
+                audio.tags["genre"] = list(genres)
             if year:
                 audio.tags["date"] = [year]
             audio.save()
@@ -146,9 +205,9 @@ def embed_tags(
             audio.tags.add(TPE1(encoding=3, text=[clean_artist]))
             audio.tags.add(TALB(encoding=3, text=[album]))
             audio.tags.add(TIT2(encoding=3, text=[title]))
-            if genre:
+            if genres:
                 audio.tags.delall("TCON")
-                audio.tags.add(TCON(encoding=3, text=[genre]))
+                audio.tags.add(TCON(encoding=3, text=list(genres)))
             if year:
                 audio.tags.delall("TDRC")
                 audio.tags.add(TDRC(encoding=3, text=[year]))
@@ -162,8 +221,8 @@ def embed_tags(
             audio.tags["\xa9ART"] = [clean_artist]
             audio.tags["\xa9alb"] = [album]
             audio.tags["\xa9nam"] = [title]
-            if genre:
-                audio.tags["\xa9gen"] = [genre]
+            if genres:
+                audio.tags["\xa9gen"] = [", ".join(genres)]
             if year:
                 audio.tags["\xa9day"] = [year]
             audio.save()
@@ -176,8 +235,8 @@ def embed_tags(
             easy.tags["artist"] = [clean_artist]
             easy.tags["album"] = [album]
             easy.tags["title"] = [title]
-            if genre:
-                easy.tags["genre"] = [genre]
+            if genres:
+                easy.tags["genre"] = list(genres)
             if year:
                 easy.tags["date"] = [year]
             easy.save()
@@ -185,262 +244,385 @@ def embed_tags(
         print(f"    [WARN] Tag embed failed for {audio_path.name}: {exc}")
 
 
-def lookup_musicbrainz_album(artist: str, album: str) -> tuple[str | None, str | None]:
+def lookup_album_metadata(artist: str, album: str) -> tuple[list[str], str | None, list[str]]:
+    """
+    Fetches (genres, year, static_cover_urls) using Last.fm (when LASTFM_API_KEY is set),
+    MusicBrainz, iTunes, and Deezer.
+    """
     clean_artist = primary_artist_only(artist)
-    query = f'releasegroup:"{album}" AND artist:"{clean_artist}"'
+    raw_genres: list[str] = []
+    year: str | None = None
+    static_covers: list[str] = []
+
+    # 1. Last.fm album.getInfo & album.getTopTags
+    if LASTFM_API_KEY.strip():
+        try:
+            lfm_info = requests.get(
+                "https://ws.audioscrobbler.com/2.0/",
+                params={
+                    "method": "album.getinfo",
+                    "api_key": LASTFM_API_KEY.strip(),
+                    "artist": clean_artist,
+                    "album": album,
+                    "format": "json",
+                },
+                headers={"User-Agent": USER_AGENT},
+                timeout=15,
+            )
+            if lfm_info.status_code == 200:
+                alb_obj = (lfm_info.json() or {}).get("album") or {}
+                wiki = alb_obj.get("wiki") or {}
+                pub_str = str(wiki.get("published") or "")
+                m_yr = re.search(r"\b(19\d{2}|20\d{2})\b", pub_str)
+                if m_yr:
+                    year = m_yr.group(1)
+
+                tags = ((alb_obj.get("tags") or {}).get("tag")) or []
+                if isinstance(tags, dict):
+                    tags = [tags]
+                for t in tags:
+                    if isinstance(t, dict) and t.get("name"):
+                        raw_genres.append(str(t["name"]))
+
+                for img in alb_obj.get("image") or []:
+                    if isinstance(img, dict) and img.get("#text"):
+                        u = str(img["#text"]).strip()
+                        if u.startswith("http"):
+                            static_covers.append(u)
+        except Exception:
+            pass
+
+        try:
+            lfm_top = requests.get(
+                "https://ws.audioscrobbler.com/2.0/",
+                params={
+                    "method": "album.gettoptags",
+                    "api_key": LASTFM_API_KEY.strip(),
+                    "artist": clean_artist,
+                    "album": album,
+                    "format": "json",
+                },
+                headers={"User-Agent": USER_AGENT},
+                timeout=15,
+            )
+            if lfm_top.status_code == 200:
+                top_tags = ((lfm_top.json() or {}).get("toptags") or {}).get("tag") or []
+                if isinstance(top_tags, list):
+                    for t in top_tags[:8]:
+                        if isinstance(t, dict) and t.get("name"):
+                            raw_genres.append(str(t["name"]))
+        except Exception:
+            pass
+
+    # 2. MusicBrainz release-group
     try:
         resp = requests.get(
             "https://musicbrainz.org/ws/2/release-group/",
-            params={"query": query, "fmt": "json", "limit": 5},
+            params={
+                "query": f'releasegroup:"{album}" AND artist:"{clean_artist}"',
+                "fmt": "json",
+                "limit": 5,
+            },
             headers=MB_HEADERS,
             timeout=15,
         )
         time.sleep(1.1)
-        if resp.status_code != 200:
-            return None, None
-        data = resp.json()
-        groups = data.get("release-groups") or []
-        if not groups:
-            return None, None
-
-        top = groups[0]
-        year: str | None = None
-        first_date = (top.get("first-release-date") or "").strip()
-        if len(first_date) >= 4 and first_date[:4].isdigit():
-            year = first_date[:4]
-
-        genres: list[str] = []
-        for g in top.get("genres") or []:
-            name = (g.get("name") or "").strip()
-            if name:
-                genres.append(name)
-
-        if not genres:
-            tags = top.get("tags") or []
-            tags_sorted = sorted(tags, key=lambda x: x.get("count", 0), reverse=True)
-            for t in tags_sorted[:2]:
-                name = (t.get("name") or "").strip()
-                if name:
-                    genres.append(name.title())
-
-        genre = genres[0].title() if genres else None
-        return genre, year
-    except Exception as exc:
-        print(f"    [WARN] MusicBrainz lookup error for '{clean_artist} - {album}': {exc}")
-        return None, None
-
-
-def save_bounded_webp_from_image(im: Image.Image, dest_webp: Path) -> tuple[bool, tuple[int, int] | None]:
-    """
-    Keeps whatever size the source has if already between 600x600 and 1024x1024;
-    otherwise clamps/scales proportionally into [600, 1024] and saves as WebP.
-    """
-    try:
-        rgb = im.convert("RGB")
-        w, h = rgb.size
-        if w <= 0 or h <= 0:
-            return False, None
-
-        min_dim = min(w, h)
-        max_dim = max(w, h)
-
-        if min_dim < 600:
-            scale = 600.0 / min_dim
-            new_w = max(600, min(1024, round(w * scale)))
-            new_h = max(600, min(1024, round(h * scale)))
-            rgb = rgb.resize((new_w, new_h), Image.Resampling.LANCZOS)
-        elif max_dim > 1024:
-            scale = 1024.0 / max_dim
-            new_w = max(600, min(1024, round(w * scale)))
-            new_h = max(600, min(1024, round(h * scale)))
-            rgb = rgb.resize((new_w, new_h), Image.Resampling.LANCZOS)
-
-        rgb.save(dest_webp, format="WEBP", quality=90, method=6)
-        return True, rgb.size
-    except Exception as exc:
-        print(f"    [WARN] WebP save failed: {exc}")
-        return False, None
-
-
-def save_bounded_webp_from_bytes(img_bytes: bytes, dest_webp: Path) -> tuple[bool, tuple[int, int] | None]:
-    try:
-        with Image.open(io.BytesIO(img_bytes)) as im:
-            return save_bounded_webp_from_image(im, dest_webp)
-    except Exception as exc:
-        print(f"    [WARN] Failed opening image bytes: {exc}")
-        return False, None
-
-
-def extract_frame_webp_from_video(video_bytes: bytes, dest_webp: Path) -> tuple[bool, tuple[int, int] | None]:
-    if shutil.which("ffmpeg") is None:
-        return False, None
-    try:
-        with tempfile.TemporaryDirectory() as tmpdir:
-            vid_path = Path(tmpdir) / "animated_cover.mp4"
-            frame_png = Path(tmpdir) / "frame.png"
-            vid_path.write_bytes(video_bytes)
-
-            cmd = [
-                "ffmpeg",
-                "-y",
-                "-i",
-                str(vid_path),
-                "-vframes",
-                "1",
-                str(frame_png),
-            ]
-            res = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=25)
-            if res.returncode != 0 or not frame_png.exists():
-                return False, None
-            return save_bounded_webp_from_bytes(frame_png.read_bytes(), dest_webp)
+        if resp.status_code == 200:
+            groups = (resp.json() or {}).get("release-groups") or []
+            if groups:
+                top = groups[0]
+                first_date = (top.get("first-release-date") or "").strip()
+                if not year and len(first_date) >= 4 and first_date[:4].isdigit():
+                    year = first_date[:4]
+                for g in top.get("genres") or []:
+                    if isinstance(g, dict) and g.get("name"):
+                        raw_genres.append(str(g["name"]))
+                tags = sorted(
+                    top.get("tags") or [],
+                    key=lambda x: x.get("count", 0),
+                    reverse=True,
+                )
+                for t in tags[:6]:
+                    if isinstance(t, dict) and t.get("name"):
+                        raw_genres.append(str(t["name"]))
     except Exception:
-        return False, None
+        pass
+
+    # 3. iTunes album lookup
+    try:
+        it_resp = requests.get(
+            "https://itunes.apple.com/search",
+            params={"term": f"{clean_artist} {album}".strip(), "media": "music", "entity": "album", "limit": 5},
+            headers=ITUNES_HEADERS,
+            timeout=15,
+        )
+        if it_resp.status_code == 200:
+            for item in (it_resp.json() or {}).get("results") or []:
+                it_artist = str(item.get("artistName") or "")
+                if clean_artist.lower() not in it_artist.lower() and it_artist.lower() not in clean_artist.lower():
+                    continue
+                if not year and item.get("releaseDate"):
+                    y_str = str(item["releaseDate"])[:4]
+                    if y_str.isdigit():
+                        year = y_str
+                if item.get("primaryGenreName"):
+                    raw_genres.append(str(item["primaryGenreName"]))
+                art = str(item.get("artworkUrl100") or "")
+                if art:
+                    for sz in ("1000x1000bb", "800x800bb", "600x600bb"):
+                        static_covers.append(re.sub(r"/\d+x\d+bb\.", f"/{sz}.", art))
+                break
+    except Exception:
+        pass
+
+    # 4. Deezer album lookup
+    try:
+        dz_resp = requests.get(
+            "https://api.deezer.com/search/album",
+            params={"q": f'artist:"{clean_artist}" album:"{album}"', "limit": 3},
+            headers={"User-Agent": USER_AGENT},
+            timeout=15,
+        )
+        if dz_resp.status_code == 200:
+            for item in (dz_resp.json() or {}).get("data") or []:
+                aid = item.get("id")
+                if aid:
+                    adet = requests.get(
+                        f"https://api.deezer.com/album/{aid}",
+                        headers={"User-Agent": USER_AGENT},
+                        timeout=15,
+                    )
+                    if adet.status_code == 200:
+                        aj = adet.json() or {}
+                        if not year and aj.get("release_date"):
+                            y_str = str(aj["release_date"])[:4]
+                            if y_str.isdigit():
+                                year = y_str
+                        for g in ((aj.get("genres") or {}).get("data") or []):
+                            if isinstance(g, dict) and g.get("name"):
+                                raw_genres.append(str(g["name"]))
+                        for ckey in ("cover_xl", "cover_big", "cover_medium"):
+                            if aj.get(ckey):
+                                static_covers.append(str(aj[ckey]))
+                break
+    except Exception:
+        pass
+
+    genres = clean_genre_list(raw_genres, clean_artist, album)
+    return genres, year, static_covers
 
 
-def collect_urls_from_obj(obj: Any, found: list[str]) -> None:
+def clamp_to_600_1024(w: int, h: int) -> tuple[int, int]:
+    if w <= 0 or h <= 0:
+        return (600, 600)
+    min_d = min(w, h)
+    max_d = max(w, h)
+    if min_d < 600:
+        scale = 600.0 / min_d
+        return (max(600, min(1024, round(w * scale))), max(600, min(1024, round(h * scale))))
+    if max_d > 1024:
+        scale = 1024.0 / max_d
+        return (max(600, min(1024, round(w * scale))), max(600, min(1024, round(h * scale))))
+    return (w, h)
+
+
+def probe_video_dimensions(media_input: str) -> tuple[int, int]:
+    if shutil.which("ffprobe") is None:
+        return (600, 600)
+    try:
+        res = subprocess.run(
+            [
+                "ffprobe",
+                "-v",
+                "error",
+                "-select_streams",
+                "v:0",
+                "-show_entries",
+                "stream=width,height",
+                "-of",
+                "json",
+                media_input,
+            ],
+            capture_output=True,
+            text=True,
+            timeout=20,
+        )
+        if res.returncode == 0 and res.stdout:
+            data = json.loads(res.stdout)
+            streams = data.get("streams") or []
+            if streams:
+                w = int(streams[0].get("width") or 0)
+                h = int(streams[0].get("height") or 0)
+                if w > 0 and h > 0:
+                    return (w, h)
+    except Exception:
+        pass
+    return (600, 600)
+
+
+def pick_best_hls_variant_url(master_m3u8_url: str, playlist_text: str) -> str:
+    best_url = master_m3u8_url
+    best_pixels = -1
+    lines = [ln.strip() for ln in playlist_text.splitlines() if ln.strip()]
+    for idx, line in enumerate(lines):
+        if line.startswith("#EXT-X-STREAM-INF") and idx + 1 < len(lines):
+            next_uri = lines[idx + 1]
+            if next_uri.startswith("#"):
+                continue
+            m_res = re.search(r"RESOLUTION=(\d+)x(\d+)", line)
+            pixels = int(m_res.group(1)) * int(m_res.group(2)) if m_res else 0
+            if pixels > best_pixels:
+                best_pixels = pixels
+                best_url = urljoin(master_m3u8_url, next_uri)
+    return best_url
+
+
+def convert_hls_or_video_to_webp(stream_url: str, dest_webp: Path) -> bool:
+    if shutil.which("ffmpeg") is None:
+        return False
+
+    target_url = stream_url
+    if ".m3u8" in stream_url.lower():
+        try:
+            r = requests.get(stream_url, headers=M8TEC_HEADERS, timeout=15)
+            if r.status_code == 200 and "#EXTM3U" in r.text:
+                target_url = pick_best_hls_variant_url(stream_url, r.text)
+        except Exception:
+            pass
+
+    src_w, src_h = probe_video_dimensions(target_url)
+    out_w, out_h = clamp_to_600_1024(src_w, src_h)
+
+    tmp_webp = dest_webp.with_suffix(".tmp.webp")
+    cmd = [
+        "ffmpeg",
+        "-y",
+        "-loglevel",
+        "error",
+        "-protocol_whitelist",
+        "file,http,https,tcp,tls,crypto",
+        "-i",
+        target_url,
+        "-vf",
+        f"scale={out_w}:{out_h}:flags=lanczos",
+        "-loop",
+        "0",
+        "-an",
+        "-q:v",
+        "80",
+        str(tmp_webp),
+    ]
+    try:
+        res = subprocess.run(cmd, timeout=60)
+        if res.returncode == 0 and tmp_webp.exists() and tmp_webp.stat().st_size > 0:
+            tmp_webp.replace(dest_webp)
+            return True
+    except Exception:
+        pass
+    finally:
+        tmp_webp.unlink(missing_ok=True)
+
+    return False
+
+
+def extract_m3u8_urls_from_payload(obj: Any, found: list[str]) -> None:
     if isinstance(obj, str):
         s = obj.strip()
-        if s.startswith("http://") or s.startswith("https://"):
-            if any(ext in s.lower() for ext in (".m3u8", ".mp4", ".m4v", ".mov", ".webp", ".jpg", ".jpeg", ".png")):
-                found.append(s)
+        if s.startswith(("http://", "https://")) and any(
+            k in s.lower() for k in (".m3u8", ".mp4", ".m4v", ".mov", "animated", "motion")
+        ):
+            found.append(s)
     elif isinstance(obj, dict):
         for v in obj.values():
-            collect_urls_from_obj(v, found)
+            extract_m3u8_urls_from_payload(v, found)
     elif isinstance(obj, list):
         for v in obj:
-            collect_urls_from_obj(v, found)
+            extract_m3u8_urls_from_payload(v, found)
 
 
-def fetch_m8tec_animated_cover(artist: str, album: str, dest_webp: Path) -> bool:
-    """Queries https://artwork.m8tec.top/ for animated/album artwork."""
+def fetch_m8tec_animated_webp(artist: str, album: str, title: str, dest_webp: Path) -> bool:
     clean_artist = primary_artist_only(artist)
-    query = f"{clean_artist} {album}".strip()
-
-    endpoints = [
-        (f"{ARTWORK_API_BASE}/api/search", {"q": query, "term": query}),
-        (f"{ARTWORK_API_BASE}/search", {"q": query, "term": query}),
-        (f"{ARTWORK_API_BASE}/api/artwork", {"q": query, "artist": clean_artist, "album": album}),
+    params_list = [
+        {"artist": clean_artist, "album": album, "title": title},
+        {"artist": clean_artist, "album": album},
     ]
 
-    candidate_urls: list[str] = []
-
-    for url, params in endpoints:
+    stream_candidates: list[str] = []
+    for params in params_list:
+        q_params = {k: v for k, v in params.items() if v}
         try:
-            resp = requests.get(url, params=params, headers=M8TEC_HEADERS, timeout=15)
+            resp = requests.get(
+                ARTWORK_SEARCH_URL,
+                params=q_params,
+                headers=M8TEC_HEADERS,
+                timeout=20,
+            )
             if resp.status_code != 200:
                 continue
             ctype = resp.headers.get("Content-Type", "").lower()
             if "json" in ctype or resp.text.strip().startswith(("{", "[")):
-                collect_urls_from_obj(resp.json(), candidate_urls)
+                extract_m3u8_urls_from_payload(resp.json(), stream_candidates)
+            elif "#EXTM3U" in resp.text:
+                stream_candidates.append(resp.url)
         except Exception:
             continue
 
-    # Also scrape any direct media/image URLs on the search page response
-    try:
-        page_resp = requests.get(
-            ARTWORK_API_BASE,
-            params={"q": query},
-            headers=M8TEC_HEADERS,
-            timeout=15,
-        )
-        if page_resp.status_code == 200 and page_resp.text:
-            for m in re.findall(r'https?://[^\s"\'<>]+', page_resp.text):
-                if any(ext in m.lower() for ext in (".m3u8", ".mp4", ".m4v", ".mov", ".webp", ".jpg", ".jpeg", ".png")):
-                    candidate_urls.append(m)
-    except Exception:
-        pass
-
     seen: set[str] = set()
-    for media_url in candidate_urls:
-        if media_url in seen:
+    for s_url in stream_candidates:
+        if s_url in seen:
             continue
-        seen.add(media_url)
-        low = media_url.lower()
-
-        if any(ext in low for ext in (".mp4", ".m4v", ".mov", ".m3u8")):
-            try:
-                m_resp = requests.get(media_url, headers=M8TEC_HEADERS, timeout=25)
-                if m_resp.status_code == 200 and m_resp.content:
-                    ok, sz = extract_frame_webp_from_video(m_resp.content, dest_webp)
-                    if ok:
-                        print(f"    [ART] Saved {sz[0]}x{sz[1]} cover.webp from m8tec animated cover")
-                        return True
-            except Exception:
-                continue
-        elif any(ext in low for ext in (".webp", ".jpg", ".jpeg", ".png")):
-            try:
-                i_resp = requests.get(media_url, headers=M8TEC_HEADERS, timeout=15)
-                if i_resp.status_code == 200 and i_resp.content:
-                    ok, sz = save_bounded_webp_from_bytes(i_resp.content, dest_webp)
-                    if ok:
-                        print(f"    [ART] Saved {sz[0]}x{sz[1]} cover.webp from m8tec")
-                        return True
-            except Exception:
-                continue
+        seen.add(s_url)
+        if convert_hls_or_video_to_webp(s_url, dest_webp):
+            print("    [ART] Saved animated cover.webp via artwork.m8tec.top")
+            return True
 
     return False
 
 
-def fetch_itunes_fallback_cover(artist: str, album: str, dest_webp: Path) -> bool:
-    clean_artist = primary_artist_only(artist)
-    term = f"{clean_artist} {album}".strip()
-    try:
-        resp = requests.get(
-            "https://itunes.apple.com/search",
-            params={"term": term, "media": "music", "entity": "album", "limit": 5},
-            headers=ITUNES_HEADERS,
-            timeout=15,
-        )
-        if resp.status_code != 200:
-            return False
-        results = (resp.json() or {}).get("results") or []
-        if not results:
-            return False
-
-        art_url = results[0].get("artworkUrl100") or results[0].get("artworkUrl60")
-        if not art_url:
-            return False
-
-        # Prefer 1000x1000 or 800x800 (already in 600..1024 range), fallback to original
-        for size_tag in ("1000x1000bb", "800x800bb", "600x600bb"):
-            candidate_url = re.sub(r"/\d+x\d+bb\.", f"/{size_tag}.", art_url)
-            img_resp = requests.get(candidate_url, headers=ITUNES_HEADERS, timeout=15)
-            if img_resp.status_code == 200 and img_resp.content:
-                ok, sz = save_bounded_webp_from_bytes(img_resp.content, dest_webp)
-                if ok:
-                    print(f"    [ART] Saved {sz[0]}x{sz[1]} cover.webp")
-                    return True
-
-        img_resp = requests.get(art_url, headers=ITUNES_HEADERS, timeout=15)
-        if img_resp.status_code == 200 and img_resp.content:
-            ok, sz = save_bounded_webp_from_bytes(img_resp.content, dest_webp)
-            if ok:
-                print(f"    [ART] Saved {sz[0]}x{sz[1]} cover.webp")
+def save_static_cover_webp(cover_urls: list[str], dest_webp: Path) -> bool:
+    for url in cover_urls:
+        try:
+            r = requests.get(url, headers=ITUNES_HEADERS, timeout=15)
+            if r.status_code != 200 or not r.content:
+                continue
+            with Image.open(io.BytesIO(r.content)) as im:
+                rgb = im.convert("RGB")
+                out_w, out_h = clamp_to_600_1024(*rgb.size)
+                if (out_w, out_h) != rgb.size:
+                    rgb = rgb.resize((out_w, out_h), Image.Resampling.LANCZOS)
+                rgb.save(dest_webp, format="WEBP", quality=90, method=6)
+                print(f"    [ART] Saved {out_w}x{out_h} static cover.webp")
                 return True
-    except Exception as exc:
-        print(f"    [WARN] Fallback cover lookup failed for '{term}': {exc}")
+        except Exception:
+            continue
     return False
 
 
-def fetch_cover_webp(artist: str, album: str, dest_webp: Path) -> bool:
-    if dest_webp.exists():
-        return True
-    if fetch_m8tec_animated_cover(artist, album, dest_webp):
-        return True
-    return fetch_itunes_fallback_cover(artist, album, dest_webp)
+def ensure_cover_webp(
+    artist: str,
+    album: str,
+    title: str,
+    static_covers: list[str],
+    dest_webp: Path,
+) -> None:
+    if dest_webp.exists() and dest_webp.stat().st_size > 0:
+        return
+    if fetch_m8tec_animated_webp(artist, album, title, dest_webp):
+        return
+    save_static_cover_webp(static_covers, dest_webp)
 
 
-def collect_local_lyrics_for_track(
+def collect_local_syllable_lyrics(
     track_stem: str,
     title: str,
     album_dir: Path,
 ) -> Path | None:
+    """
+    Finds matching local lyric files (.lrc, .elrc, .ttml, .lrc.txt) and saves
+    them next to the track as <track_stem>.lrc while preserving syllable/word timestamps.
+    """
     target_lrc = album_dir / f"{track_stem}.lrc"
     if target_lrc.exists() and target_lrc.stat().st_size > 0:
-        # Ensure existing file only has line-synced content
-        existing_clean = to_line_synced_lrc(target_lrc.read_text(encoding="utf-8", errors="ignore"))
-        if existing_clean:
-            target_lrc.write_text(existing_clean + "\n", encoding="utf-8")
         return target_lrc
 
     candidates = {track_stem.lower().strip(), title.lower().strip()}
@@ -463,18 +645,17 @@ def collect_local_lyrics_for_track(
                     src = Path(root) / fname
                     try:
                         raw = src.read_text(encoding="utf-8", errors="ignore").strip()
-                        line_synced = to_line_synced_lrc(raw)
-                        if line_synced:
-                            target_lrc.write_text(line_synced + "\n", encoding="utf-8")
+                        if raw:
+                            target_lrc.write_text(raw + "\n", encoding="utf-8")
                             if src.parent != album_dir.resolve() and DOWNLOADS_DIR.resolve() in src.resolve().parents:
-                                src.unlink()
+                                src.unlink(missing_ok=True)
                             return target_lrc
                     except Exception:
                         pass
     return None
 
 
-def fetch_lyrics_as_lrc(
+def fetch_syllable_lyrics_lrc(
     artist: str,
     album: str,
     title: str,
@@ -482,16 +663,15 @@ def fetch_lyrics_as_lrc(
     album_dir: Path,
 ) -> Path | None:
     """
-    Saves line-synced lyrics only next to the track with .lrc extension.
+    Tries syllable-synced / enhanced lyrics first (enhanced=True) so word/syllable
+    timing tags are preserved, falling back to enhanced=False if unavailable.
+    Saves next to the track with .lrc extension.
     """
     dest_lrc = album_dir / f"{track_stem}.lrc"
     if dest_lrc.exists() and dest_lrc.stat().st_size > 0:
-        existing_clean = to_line_synced_lrc(dest_lrc.read_text(encoding="utf-8", errors="ignore"))
-        if existing_clean:
-            dest_lrc.write_text(existing_clean + "\n", encoding="utf-8")
         return dest_lrc
 
-    local_found = collect_local_lyrics_for_track(track_stem, title, album_dir)
+    local_found = collect_local_syllable_lyrics(track_stem, title, album_dir)
     if local_found:
         return local_found
 
@@ -505,28 +685,33 @@ def fetch_lyrics_as_lrc(
     ]
 
     for query in queries:
-        try:
-            # enhanced=False requests standard line-synced lyrics rather than word/character synced
-            lyrics_text = syncedlyrics.search(query, enhanced=False)
-            if lyrics_text and lyrics_text.strip():
-                line_synced = to_line_synced_lrc(lyrics_text)
-                if line_synced:
-                    dest_lrc.write_text(line_synced + "\n", encoding="utf-8")
-                    print(f"    [LYRICS] Saved {dest_lrc.name} (line-synced)")
+        for enhanced_flag in (True, False):
+            try:
+                lyrics_text = syncedlyrics.search(query, enhanced=enhanced_flag)
+                if lyrics_text and lyrics_text.strip():
+                    dest_lrc.write_text(lyrics_text.strip() + "\n", encoding="utf-8")
+                    mode = "syllable/enhanced-synced" if enhanced_flag else "synced"
+                    print(f"    [LYRICS] Saved {dest_lrc.name} ({mode})")
                     return dest_lrc
-        except Exception as exc:
-            print(f"    [WARN] syncedlyrics error ({query}): {exc}", file=sys.stderr)
+            except Exception as exc:
+                print(f"    [WARN] syncedlyrics error ({query}, enhanced={enhanced_flag}): {exc}", file=sys.stderr)
 
     return None
 
 
 def process_album_folder(album_dir: Path) -> None:
+    marker_path = album_dir / DONE_MARKER_NAME
+    if marker_path.exists():
+        return
+
     audio_files = sorted(
         [p for p in album_dir.iterdir() if p.is_file() and p.suffix.lower() in AUDIO_EXTS],
         key=lambda p: p.name.lower(),
     )
     if not audio_files:
         return
+
+    cleanup_junk_lyrics_in_album(album_dir, audio_files)
 
     manifest_path = album_dir / ".enrich_manifest.json"
     manifest_tracks: dict[str, dict[str, Any]] = {}
@@ -539,21 +724,30 @@ def process_album_folder(album_dir: Path) -> None:
             pass
 
     inferred_album = album_dir.name
-    inferred_artist = primary_artist_only(album_dir.parent.name if album_dir.parent != MUSIC_ROOT else "Unknown Artist")
+    inferred_artist = primary_artist_only(
+        album_dir.parent.name if album_dir.parent != MUSIC_ROOT else "Unknown Artist"
+    )
+    first_title = audio_files[0].stem
 
     if manifest_tracks:
         first_item = next(iter(manifest_tracks.values()))
         inferred_artist = primary_artist_only(first_item.get("artist") or inferred_artist)
         inferred_album = first_item.get("album") or inferred_album
+        first_title = first_item.get("title") or first_title
 
     print(f"  Album: {inferred_artist} - {inferred_album} ({len(audio_files)} track(s))")
 
-    genre, year = lookup_musicbrainz_album(inferred_artist, inferred_album)
-    if genre or year:
-        print(f"    [MB] Genre={genre or 'N/A'} | Year={year or 'N/A'}")
+    genres, year, static_covers = lookup_album_metadata(inferred_artist, inferred_album)
+    print(f"    [META] Genres={genres or ['N/A']} | Year={year or 'N/A'}")
 
     cover_webp = album_dir / "cover.webp"
-    fetch_cover_webp(inferred_artist, inferred_album, cover_webp)
+    ensure_cover_webp(
+        artist=inferred_artist,
+        album=inferred_album,
+        title=first_title,
+        static_covers=static_covers,
+        dest_webp=cover_webp,
+    )
 
     for audio_path in audio_files:
         m_entry = manifest_tracks.get(audio_path.name, {})
@@ -566,11 +760,11 @@ def process_album_folder(album_dir: Path) -> None:
             artist=track_artist,
             album=track_album,
             title=track_title,
-            genre=genre,
+            genres=genres,
             year=year,
         )
 
-        fetch_lyrics_as_lrc(
+        fetch_syllable_lyrics_lrc(
             artist=track_artist,
             album=track_album,
             title=track_title,
@@ -578,11 +772,17 @@ def process_album_folder(album_dir: Path) -> None:
             album_dir=album_dir,
         )
 
+    marker_path.write_text("processed\n", encoding="utf-8")
+
 
 def process_user_music_dir(user_music_dir: Path) -> None:
     print(f"\n=== [Stage 2] Music User: {user_music_dir.name} ===")
-    for artist_dir in sorted([p for p in user_music_dir.iterdir() if p.is_dir() and not p.name.startswith(".")]):
-        for album_dir in sorted([p for p in artist_dir.iterdir() if p.is_dir() and not p.name.startswith(".")]):
+    for artist_dir in sorted(
+        [p for p in user_music_dir.iterdir() if p.is_dir() and not p.name.startswith(".")]
+    ):
+        for album_dir in sorted(
+            [p for p in artist_dir.iterdir() if p.is_dir() and not p.name.startswith(".")]
+        ):
             process_album_folder(album_dir)
 
 
