@@ -188,7 +188,8 @@
       extraOptions = [ "--network=media-net" ];
       volumes = [
         "/home/yasiru/docker/navidrome/data:/data"
-        "/home/yasiru/Music:/music"
+        "/home/yasiru/Music/navidrome:/navidrome"
+        "/home/yasiru/Music/yasindu:/yasindu"
       ];
       environment = {
         ND_LASTFM_ENABLED = "true";
@@ -237,7 +238,8 @@
         "140:8081"
       ];
       volumes = [
-        "/home/yasiru/Videos/avg:/downloads"
+        "/home/yasiru/Videos/avg:/videos"
+        "/home/yasiru/Music/down:/music"
       ];
       environment = {
         DEFAULT_OPTION_AUTO_START = "false";
