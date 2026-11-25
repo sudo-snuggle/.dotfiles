@@ -127,40 +127,45 @@
   };
 
   # ---------- packages ----------
-  environment.systemPackages = with pkgs; [
-    # System & hardware
-    brightnessctl
-    udiskie
+ environment.systemPackages = with pkgs; [
+  # System & hardware
+  brightnessctl
+  udiskie
 
-    # CLI utilities
-    curl
-    wget
-    git
-    gh
-    jq
-    neovim
-    kitty
-    yazi
-    p7zip
-    unzip
-    btop
+  # CLI utilities
+  curl
+  wget
+  git
+  gh
+  jq
+  neovim
+  kitty
+  yazi
+  p7zip
+  unzip
+  btop
 
-    # Media & 10-foot HDMI frontend
-    yt-dlp
-    aria2
-    ffmpeg
-    cage
-    moonlight-qt
-    libcec
-    feishin
-    vacuum-tube
-    jellyfin-media-player
-    nwg-launchers
-    distrobox
+  # Media & 10-foot HDMI frontend
+  yt-dlp
+  aria2
+  ffmpeg
+  cage
+  moonlight-qt
+  libcec
+  feishin
+  vacuum-tube
+  jellyfin-media-player
+  nwg-launchers
+  distrobox
 
-    python3
-  ];
-
+  # Python environment for ~/.dotfiles/Music scripts
+  (python3.withPackages (ps: with ps; [
+    mutagen
+    requests
+    pillow
+     syncedlyrics # uncomment if available in your nixpkgs channel
+  ]))
+];
   virtualisation.podman.enable = true;
 
   # ---------- pi-hole dns ----------
