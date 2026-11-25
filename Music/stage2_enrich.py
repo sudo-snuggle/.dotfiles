@@ -42,8 +42,8 @@ except ImportError:
 # SECTION 1: CONFIGURATION & CREDENTIALS
 # ==============================================================================
 
-LASTFM_API_KEY = ""
-LASTFM_API_SECRET = ""
+LASTFM_API_KEY = "956a19b94112e184f4dca4a0dd015980"
+LASTFM_API_SECRET = "6bfc4969f1942cb838e45c68feef40ca"
 
 SCRIPT_DIR = Path(__file__).resolve().parent  # ~/.dotfiles/Music
 HOME = Path.home()
