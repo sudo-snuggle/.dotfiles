@@ -381,43 +381,12 @@ def embed_tags(
         print(f"    [WARN] Tag embed failed for {audio_path.name}: {exc}")
 
 
-
 # ==============================================================================
-# SECTION 5: ALBUM COVER ART (DOWNLOAD FIRST -> CONVERT TO 600x600 cover.webp)
+# SECTION 5: ALBUM COVER ART (STATIC ITUNES -> 600x600 cover.webp)
 # ==============================================================================
 
 MIN_COVER_PX = 500
 TARGET_COVER_PX = 600
-
-
-def fetch_m8tec_animated_urls(artist: str, album: str, title: str = "") -> list[str]:
-    query_artist = artist.strip()
-    query_album = album.strip()
-    if not query_artist and not query_album:
-        return []
-
-    params = {"artist": query_artist, "album": query_album}
-    if title.strip():
-        params["title"] = title.strip()
-
-    try:
-        resp = requests.get(
-            "https://artwork.m8tec.top/api/v1/artwork/search",
-            params=params,
-            headers={"User-Agent": USER_AGENT},
-            timeout=15,
-        )
-        if resp.status_code != 200:
-            return []
-        data = resp.json() or {}
-        urls: list[str] = []
-        for key in ("url", "url_tall"):
-            val = str(data.get(key) or "").strip()
-            if val and val not in urls:
-                urls.append(val)
-        return urls
-    except Exception:
-        return []
 
 
 def fetch_itunes_cover_urls(
@@ -489,98 +458,7 @@ def _probe_image_dimensions(img_path: Path) -> tuple[int, int] | None:
     return None
 
 
-def _is_animated_webp(path: Path) -> bool:
-    try:
-        data = path.read_bytes()[:24]
-        return (
-            len(data) >= 21
-            and data[:4] == b"RIFF"
-            and data[8:12] == b"WEBP"
-            and data[12:16] == b"VP8X"
-            and bool(data[20] & 0x02)
-        )
-    except Exception:
-        return False
-
-
-def _resolve_m3u8_media_uris(m3u8_url: str, session: requests.Session) -> list[str]:
-    from urllib.parse import urljoin
-
-    resp = session.get(m3u8_url, timeout=15)
-    resp.raise_for_status()
-    lines = [line.strip() for line in resp.text.splitlines() if line.strip() and not line.startswith("#")]
-    if not lines:
-        return []
-
-    resolved = [urljoin(m3u8_url, line) for line in lines]
-
-    # If master playlist pointing to sub-playlists (.m3u8), pick the first sub-playlist and read its segments
-    if any(u.lower().split("?")[0].endswith(".m3u8") for u in resolved):
-        sub_url = next(u for u in resolved if u.lower().split("?")[0].endswith(".m3u8"))
-        sub_resp = session.get(sub_url, timeout=15)
-        sub_resp.raise_for_status()
-        sub_lines = [
-            line.strip()
-            for line in sub_resp.text.splitlines()
-            if line.strip() and not line.startswith("#")
-        ]
-        return [urljoin(sub_url, line) for line in sub_lines]
-
-    return resolved
-
-
-def _download_hls_via_requests(hls_url: str, raw_path: Path) -> bool:
-    raw_path.unlink(missing_ok=True)
-    session = requests.Session()
-    session.headers.update({"User-Agent": USER_AGENT})
-
-    try:
-        segments = _resolve_m3u8_media_uris(hls_url, session)
-        if not segments:
-            return False
-
-        written = 0
-        with open(raw_path, "wb") as out_f:
-            for seg_url in segments:
-                seg_ok = False
-                for _attempt in range(3):
-                    try:
-                        r = session.get(seg_url, timeout=15)
-                        if r.status_code == 200 and r.content:
-                            out_f.write(r.content)
-                            written += len(r.content)
-                            seg_ok = True
-                            break
-                    except Exception:
-                        continue
-                if not seg_ok:
-                    break
-
-        return written > 0 and raw_path.exists() and raw_path.stat().st_size > 0
-    except Exception:
-        raw_path.unlink(missing_ok=True)
-        return False
-    finally:
-        session.close()
-
-
-def _download_raw_source(url: str, raw_path: Path, is_hls: bool = False) -> bool:
-    raw_path.unlink(missing_ok=True)
-    if is_hls or url.lower().split("?")[0].endswith(".m3u8"):
-        return _download_hls_via_requests(url, raw_path)
-
-    try:
-        resp = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=15)
-        if resp.status_code != 200 or not resp.content:
-            return False
-        raw_path.write_bytes(resp.content)
-        return raw_path.stat().st_size > 0
-    except Exception:
-        raw_path.unlink(missing_ok=True)
-        return False
-
-
-def _convert_local_to_webp(raw_path: Path, webp_target: Path, animated: bool) -> bool:
+def _convert_static_to_webp(raw_path: Path, webp_target: Path) -> bool:
     if not shutil.which("ffmpeg"):
         return False
 
@@ -596,48 +474,24 @@ def _convert_local_to_webp(raw_path: Path, webp_target: Path, animated: bool) ->
     tmp_out.unlink(missing_ok=True)
 
     try:
-        if animated:
-            vf = (
-                f"fps=20,"
-                f"scale='if(gt(iw,ih),min({TARGET_COVER_PX},iw),-2)':"
-                f"'if(gt(ih,iw),min({TARGET_COVER_PX},ih),-2)'"
-            )
-            cmd = [
-                "ffmpeg",
-                "-y",
-                "-loglevel",
-                "error",
-                "-i",
-                str(raw_path),
-                "-vf",
-                vf,
-                "-c:v",
-                "libwebp",
-                "-loop",
-                "0",
-                "-quality",
-                "75",
-                "-an",
-                str(tmp_out),
-            ]
-        else:
-            cmd = [
-                "ffmpeg",
-                "-y",
-                "-loglevel",
-                "error",
-                "-i",
-                str(raw_path),
-                "-vf",
-                f"scale='min({TARGET_COVER_PX},iw)':'min({TARGET_COVER_PX},ih)':force_original_aspect_ratio=decrease",
-                "-c:v",
-                "libwebp",
-                "-quality",
-                "88",
-                str(tmp_out),
-            ]
-
-        subprocess.run(cmd, check=True, timeout=60)
+        cmd = [
+            "ffmpeg",
+            "-y",
+            "-loglevel",
+            "error",
+            "-i",
+            str(raw_path),
+            "-vf",
+            f"scale='min({TARGET_COVER_PX},iw)':'min({TARGET_COVER_PX},ih)':force_original_aspect_ratio=decrease",
+            "-frames:v",
+            "1",
+            "-c:v",
+            "libwebp",
+            "-quality",
+            "88",
+            str(tmp_out),
+        ]
+        subprocess.run(cmd, check=True, timeout=30)
         out_dims = _probe_image_dimensions(tmp_out)
         if not out_dims or min(out_dims) < MIN_COVER_PX:
             tmp_out.unlink(missing_ok=True)
@@ -655,10 +509,8 @@ def ensure_cover_webp(
     album_dir: Path | None = None,
     artist: str = "",
     album: str = "",
-    title: str = "",
     dry_run: bool = False,
     static_covers: list[str] | None = None,
-    animated_covers: list[str] | None = None,
     dest_webp: Path | None = None,
     **_kwargs,
 ) -> Path | None:
@@ -671,48 +523,41 @@ def ensure_cover_webp(
         return webp_target
 
     if dry_run:
-        print(f"  [DRY-RUN] Fetch cover art -> {webp_target}")
+        print(f"  [DRY-RUN] Fetch static cover -> {webp_target}")
+        return None
+
+    ordered_urls: list[str] = []
+    seen: set[str] = set()
+    for u in [
+        *fetch_itunes_cover_urls(artist, album, TARGET_COVER_PX),
+        *(static_covers or []),
+        *(cover_urls or []),
+    ]:
+        if u and u not in seen:
+            seen.add(u)
+            ordered_urls.append(u)
+
+    if not ordered_urls:
         return None
 
     target_dir.mkdir(parents=True, exist_ok=True)
-    raw_anim = target_dir / ".cover_raw_anim"
-    raw_static = target_dir / ".cover_raw_static"
+    raw_path = target_dir / ".cover_raw_tmp"
 
     try:
-        # 1. Download m8tec animated HLS segments via requests first, then encode locally to 600px webp
-        m3u8_candidates: list[str] = []
-        for u in [*fetch_m8tec_animated_urls(artist, album, title), *(animated_covers or [])]:
-            if u and u not in m3u8_candidates:
-                m3u8_candidates.append(u)
-
-        for m3u8_url in m3u8_candidates:
-            if _download_raw_source(m3u8_url, raw_anim, is_hls=True):
-                if _convert_local_to_webp(raw_anim, webp_target, animated=True):
-                    print(f"    [COVER] Saved animated {webp_target.name} (m8tec)")
-                    return webp_target
-
-        # 2. Download iTunes + static fallback sources locally first, then encode to 600px webp
-        ordered_urls: list[str] = []
-        seen_urls: set[str] = set()
-        for u in [
-            *fetch_itunes_cover_urls(artist, album, TARGET_COVER_PX),
-            *(static_covers or []),
-            *(cover_urls or []),
-        ]:
-            if u and u not in seen_urls:
-                seen_urls.add(u)
-                ordered_urls.append(u)
-
         for url in ordered_urls:
-            if _download_raw_source(url, raw_static, is_hls=False):
-                is_anim = _is_animated_webp(raw_static)
-                if _convert_local_to_webp(raw_static, webp_target, animated=is_anim):
-                    kind = "animated" if is_anim else "static"
-                    print(f"    [COVER] Saved {kind} {webp_target.name} (iTunes/fallback)")
-                    return webp_target
+            try:
+                resp = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=15)
+                if resp.status_code != 200 or not resp.content:
+                    continue
+                raw_path.write_bytes(resp.content)
+            except Exception:
+                continue
+
+            if _convert_static_to_webp(raw_path, webp_target):
+                print(f"    [COVER] Saved static {webp_target.name}")
+                return webp_target
     finally:
-        raw_anim.unlink(missing_ok=True)
-        raw_static.unlink(missing_ok=True)
+        raw_path.unlink(missing_ok=True)
 
     return None
 
@@ -720,18 +565,23 @@ def ensure_cover_webp(
 ensure_album_cover = ensure_cover_webp
 
 # ==============================================================================
-# SECTION 6: LYRICS FETCHING & CLEANUP (NEXT TO TRACKS)
+# SECTION 6: LYRICS FETCHING & CLEANUP (LINE-SYNCED .lrc ONLY)
 # ==============================================================================
 
-def has_syllable_sync(lyrics_text: str) -> bool:
-    return bool(re.search(r"<\d{1,2}:\d{2}(?:\.\d{1,3})?>", lyrics_text))
+def to_line_synced_lrc(text: str) -> str:
+    """Strips inline <mm:ss.xx> word timestamps if present, keeping line-synced .lrc lines."""
+    cleaned = re.sub(r"<\d{1,2}:\d{2}(?:\.\d{1,3})?>", "", text)
+    lines = [line.rstrip() for line in cleaned.splitlines()]
+    while lines and not lines[-1].strip():
+        lines.pop()
+    return "\n".join(lines)
 
 
 def cleanup_junk_lyrics_in_album(album_dir: Path, audio_files: list[Path]) -> None:
     for p in list(album_dir.iterdir()):
         if not p.is_file():
             continue
-        if p.name.lower().endswith(".lrc.txt"):
+        if p.name.lower().endswith(".lrc.txt") or p.suffix.lower() == ".ttml":
             p.unlink(missing_ok=True)
 
     stems = {a.stem.lower().strip() for a in audio_files}
@@ -742,7 +592,7 @@ def cleanup_junk_lyrics_in_album(album_dir: Path, audio_files: list[Path]) -> No
     }
 
     for p in list(album_dir.iterdir()):
-        if not p.is_file() or p.suffix.lower() not in {".lrc", ".ttml"}:
+        if not p.is_file() or p.suffix.lower() != ".lrc":
             continue
         p_stem = p.stem.lower().strip()
         if p_stem in titles_only and any(s.startswith(p_stem + " - ") for s in stems):
@@ -754,10 +604,9 @@ def collect_local_lyrics(
     title: str,
     album_dir: Path,
 ) -> Path | None:
-    for ext in (".ttml", ".lrc", ".elrc"):
-        existing = album_dir / f"{track_stem}{ext}"
-        if existing.exists() and existing.stat().st_size > 0:
-            return existing
+    existing = album_dir / f"{track_stem}.lrc"
+    if existing.exists() and existing.stat().st_size > 0:
+        return existing
 
     candidates = {track_stem.lower().strip(), title.lower().strip()}
     candidates.discard("")
@@ -772,27 +621,25 @@ def collect_local_lyrics(
         for root, _, files in os.walk(sdir):
             for fname in files:
                 fl = fname.lower()
-                if not (fl.endswith(".lrc.txt") or Path(fl).suffix in LYRIC_EXTS):
+                if not (fl.endswith(".lrc.txt") or fl.endswith(".lrc") or fl.endswith(".elrc")):
                     continue
-                base = re.sub(r"\.(elrc|lrc(\.txt)?|ttml)$", "", fname, flags=re.IGNORECASE).lower()
+                base = re.sub(r"\.(elrc|lrc(\.txt)?)$", "", fname, flags=re.IGNORECASE).lower()
                 if any(c in base or base in c for c in candidates):
                     src = Path(root) / fname
                     try:
                         raw = src.read_text(encoding="utf-8", errors="ignore").strip()
-                        if raw:
-                            out_ext = ".ttml" if ("<tt" in raw or fl.endswith(".ttml")) else ".lrc"
-                            target = album_dir / f"{track_stem}{out_ext}"
-                            target.write_text(raw + "\n", encoding="utf-8")
+                        lrc_out = to_line_synced_lrc(raw)
+                        if lrc_out:
+                            existing.write_text(lrc_out + "\n", encoding="utf-8")
                             if src.parent != album_dir.resolve() and DOWNLOADS_DIR.resolve() in src.resolve().parents:
                                 src.unlink(missing_ok=True)
-                            return target
+                            return existing
                     except Exception:
                         pass
     return None
 
 
-def fetch_unison_raw(artist: str, title: str) -> tuple[str, str] | None:
-    """Returns (content, ext) where ext is '.ttml' or '.lrc'."""
+def fetch_unison_lrc(artist: str, title: str) -> str | None:
     try:
         r = requests.get(
             "https://unison.betterlyrics.org/lyrics",
@@ -807,10 +654,9 @@ def fetch_unison_raw(artist: str, title: str) -> tuple[str, str] | None:
             return None
         data = payload.get("data") or {}
         raw = (data.get("lyrics") or "").strip()
-        if not raw:
+        if not raw or "<tt" in raw:
             return None
-        ext = ".ttml" if "<tt" in raw else ".lrc"
-        return raw, ext
+        return to_line_synced_lrc(raw) or None
     except Exception:
         return None
 
@@ -828,26 +674,22 @@ def fetch_lyrics_lrc(
 
     clean_artist = primary_artist_only(artist)
     clean_title = clean_lyric_title(title) or title
+    dest_lrc = album_dir / f"{track_stem}.lrc"
 
-    # 1. Unison (saves raw format as-is: .ttml or .lrc)
-    unison_res = fetch_unison_raw(clean_artist, clean_title)
-    if unison_res:
-        raw_text, ext = unison_res
-        dest_file = album_dir / f"{track_stem}{ext}"
-        dest_file.write_text(raw_text + "\n", encoding="utf-8")
-        print(f"    [LYRICS] Saved {dest_file.name} (unison)")
-        return dest_file
+    # 1. Unison line-synced LRC first
+    unison_lrc = fetch_unison_lrc(clean_artist, clean_title)
+    if unison_lrc:
+        dest_lrc.write_text(unison_lrc + "\n", encoding="utf-8")
+        print(f"    [LYRICS] Saved {dest_lrc.name} (line-synced, unison)")
+        return dest_lrc
 
-    # 2. syncedlyrics fallback (.lrc)
+    # 2. syncedlyrics fallback (line-synced LRC)
     if syncedlyrics is None:
         return None
 
     query = f"{clean_artist} {clean_title}".strip()
-    lyrics_text: str | None = None
     try:
-        lyrics_text = syncedlyrics.search(query, enhanced=True)
-        if not lyrics_text or not lyrics_text.strip():
-            lyrics_text = syncedlyrics.search(query, enhanced=False)
+        lyrics_text = syncedlyrics.search(query, enhanced=False)
     except Exception as exc:
         print(f"    [WARN] syncedlyrics error for '{query}': {exc}", file=sys.stderr)
         return None
@@ -855,12 +697,124 @@ def fetch_lyrics_lrc(
     if not lyrics_text or not lyrics_text.strip():
         return None
 
-    dest_lrc = album_dir / f"{track_stem}.lrc"
-    dest_lrc.write_text(lyrics_text.strip() + "\n", encoding="utf-8")
-    sync_kind = "syllable/enhanced-synced" if has_syllable_sync(lyrics_text) else "line-synced"
-    print(f"    [LYRICS] Saved {dest_lrc.name} ({sync_kind}, syncedlyrics)")
+    lrc_out = to_line_synced_lrc(lyrics_text)
+    if not lrc_out:
+        return None
+
+    dest_lrc.write_text(lrc_out + "\n", encoding="utf-8")
+    print(f"    [LYRICS] Saved {dest_lrc.name} (line-synced, syncedlyrics)")
     return dest_lrc
 
+# ==============================================================================
+# SECTION 7: ALBUM & USER ORCHESTRATION + ENTRYPOINT
+# ==============================================================================
+
+def process_album_folder(album_dir: Path) -> None:
+    marker_path = album_dir / DONE_MARKER_NAME
+    if marker_path.exists():
+        return
+
+    audio_files = sorted(
+        [p for p in album_dir.iterdir() if p.is_file() and p.suffix.lower() in AUDIO_EXTS],
+        key=lambda p: p.name.lower(),
+    )
+    if not audio_files:
+        return
+
+    cleanup_junk_lyrics_in_album(album_dir, audio_files)
+
+    manifest_path = album_dir / ".enrich_manifest.json"
+    manifest_tracks: dict[str, dict[str, Any]] = {}
+    if manifest_path.exists():
+        try:
+            mdata = json.loads(manifest_path.read_text(encoding="utf-8"))
+            for item in mdata.get("tracks", []):
+                manifest_tracks[item.get("file", "")] = item
+        except Exception:
+            pass
+
+    inferred_album = album_dir.name
+    inferred_artist = primary_artist_only(
+        album_dir.parent.name if album_dir.parent != MUSIC_ROOT else "Unknown Artist"
+    )
+
+    if manifest_tracks:
+        first_item = next(iter(manifest_tracks.values()))
+        inferred_artist = primary_artist_only(first_item.get("artist") or inferred_artist)
+        inferred_album = first_item.get("album") or inferred_album
+
+    print(f"  Album: {inferred_artist} - {inferred_album} ({len(audio_files)} track(s))")
+
+    genres, year, static_covers = lookup_album_metadata(inferred_artist, inferred_album)
+    print(f"    [META] Genres={genres or ['N/A']} | Year={year or 'N/A'}")
+
+    cover_webp = album_dir / "cover.webp"
+    ensure_cover_webp(
+        artist=inferred_artist,
+        album=inferred_album,
+        static_covers=static_covers,
+        dest_webp=cover_webp,
+    )
+
+    for audio_path in audio_files:
+        m_entry = manifest_tracks.get(audio_path.name, {})
+        track_artist = primary_artist_only(m_entry.get("artist") or inferred_artist)
+        track_album = m_entry.get("album") or inferred_album
+        track_title = m_entry.get("title") or audio_path.stem
+
+        embed_tags(
+            audio_path=audio_path,
+            artist=track_artist,
+            album=track_album,
+            title=track_title,
+            genres=genres,
+            year=year,
+        )
+
+        fetch_lyrics_lrc(
+            artist=track_artist,
+            album=track_album,
+            title=track_title,
+            track_stem=audio_path.stem,
+            album_dir=album_dir,
+        )
+
+    marker_path.write_text("processed\n", encoding="utf-8")
+
+
+def process_user_music_dir(user_music_dir: Path) -> None:
+    print(f"\n=== [Stage 2] Music User: {user_music_dir.name} ===")
+    for artist_dir in sorted(
+        [p for p in user_music_dir.iterdir() if p.is_dir() and not p.name.startswith(".")]
+    ):
+        for album_dir in sorted(
+            [p for p in artist_dir.iterdir() if p.is_dir() and not p.name.startswith(".")]
+        ):
+            process_album_folder(album_dir)
+
+
+def main() -> None:
+    if not MUSIC_ROOT.exists():
+        print(f"Music directory not found: {MUSIC_ROOT}")
+        return
+
+    user_dirs = sorted(
+        [p for p in MUSIC_ROOT.iterdir() if p.is_dir() and not p.name.startswith(".")],
+        key=lambda p: p.name.lower(),
+    )
+
+    if not user_dirs:
+        print(f"No user folders found in {MUSIC_ROOT}")
+        return
+
+    for udir in user_dirs:
+        process_user_music_dir(udir)
+
+    print("\nStage 2 complete.")
+
+
+if __name__ == "__main__":
+    main()
 # ==============================================================================
 # SECTION 7: ALBUM & USER ORCHESTRATION + ENTRYPOINT
 # ==============================================================================
