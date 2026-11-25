@@ -380,11 +380,11 @@ def embed_tags(
     except Exception as exc:
         print(f"    [WARN] Tag embed failed for {audio_path.name}: {exc}")
 # ==============================================================================
-# SECTION 5: ALBUM COVER ART (ANIMATED M8TEC + STATIC ITUNES -> cover.webp)
+# SECTION 5: ALBUM COVER ART (ANIMATED M8TEC + STATIC ITUNES -> 600x600 cover.webp)
 # ==============================================================================
 
-MIN_COVER_PX = 600
-TARGET_COVER_PX = 1024
+MIN_COVER_PX = 500
+TARGET_COVER_PX = 600
 
 
 def fetch_m8tec_animated_urls(artist: str, album: str, title: str = "") -> list[str]:
@@ -574,11 +574,16 @@ def ensure_cover_webp(
     album: str = "",
     title: str = "",
     dry_run: bool = False,
+    static_covers: list[str] | None = None,
+    animated_covers: list[str] | None = None,
+    dest_webp: Path | None = None,
+    **_kwargs,
 ) -> Path | None:
-    if album_dir is None:
+    webp_target = dest_webp or (album_dir / "cover.webp" if album_dir is not None else None)
+    if webp_target is None:
         return None
+    target_dir = webp_target.parent
 
-    webp_target = album_dir / "cover.webp"
     if webp_target.exists() and webp_target.stat().st_size > 0:
         return webp_target
 
@@ -586,18 +591,27 @@ def ensure_cover_webp(
         print(f"  [DRY-RUN] Fetch cover art -> {webp_target}")
         return None
 
-    album_dir.mkdir(parents=True, exist_ok=True)
+    target_dir.mkdir(parents=True, exist_ok=True)
 
-    # 1. Animated HLS artwork via artwork.m8tec.top first
-    for m3u8_url in fetch_m8tec_animated_urls(artist, album, title):
+    # 1. Animated HLS artwork via artwork.m8tec.top first (+ any animated_covers passed in)
+    m3u8_candidates: list[str] = []
+    for u in [*fetch_m8tec_animated_urls(artist, album, title), *(animated_covers or [])]:
+        if u and u not in m3u8_candidates:
+            m3u8_candidates.append(u)
+
+    for m3u8_url in m3u8_candidates:
         if _encode_hls_to_animated_webp(m3u8_url, webp_target):
             print(f"    [COVER] Saved animated {webp_target.name} (m8tec)")
             return webp_target
 
-    # 2. Static iTunes 1024x1024bb + any caller-provided cover_urls
+    # 2. Static iTunes 600x600bb + static_covers + cover_urls
     ordered_urls: list[str] = []
     seen_urls: set[str] = set()
-    for u in [*fetch_itunes_cover_urls(artist, album), *(cover_urls or [])]:
+    for u in [
+        *fetch_itunes_cover_urls(artist, album, TARGET_COVER_PX),
+        *(static_covers or []),
+        *(cover_urls or []),
+    ]:
         if u and u not in seen_urls:
             seen_urls.add(u)
             ordered_urls.append(u)
@@ -605,7 +619,7 @@ def ensure_cover_webp(
     if not ordered_urls:
         return None
 
-    tmp_raw = album_dir / ".cover_raw_tmp"
+    tmp_raw = target_dir / ".cover_raw_tmp"
     try:
         for url in ordered_urls:
             try:
