@@ -379,7 +379,6 @@ def embed_tags(
             easy.save()
     except Exception as exc:
         print(f"    [WARN] Tag embed failed for {audio_path.name}: {exc}")
-
 # ==============================================================================
 # SECTION 5: ALBUM COVER ART (ANIMATED M8TEC + STATIC ITUNES -> cover.webp)
 # ==============================================================================
@@ -534,14 +533,51 @@ def _encode_hls_to_animated_webp(hls_url: str, webp_target: Path) -> bool:
         return False
 
 
-def ensure_album_cover(
-    cover_urls: list[str],
-    album_dir: Path,
+def _save_static_as_webp(raw_path: Path, data: bytes, webp_target: Path) -> bool:
+    dims = _probe_image_dimensions(raw_path)
+    if not dims:
+        return False
+
+    w, h = dims
+    if min(w, h) < MIN_COVER_PX:
+        return False
+
+    needs_downscale = max(w, h) > TARGET_COVER_PX
+    animated = _is_animated_webp(data)
+
+    if animated and not needs_downscale:
+        raw_path.replace(webp_target)
+        return webp_target.exists() and webp_target.stat().st_size > 0
+
+    if not shutil.which("ffmpeg"):
+        return False
+
+    cmd = ["ffmpeg", "-y", "-loglevel", "error", "-i", str(raw_path)]
+    if needs_downscale:
+        cmd += [
+            "-vf",
+            f"scale='min({TARGET_COVER_PX},iw)':'min({TARGET_COVER_PX},ih)':force_original_aspect_ratio=decrease",
+        ]
+    if animated:
+        cmd += ["-c:v", "libwebp", "-loop", "0", "-quality", "85"]
+    else:
+        cmd += ["-c:v", "libwebp", "-quality", "88"]
+    cmd.append(str(webp_target))
+    subprocess.run(cmd, check=True)
+    return webp_target.exists() and webp_target.stat().st_size > 0
+
+
+def ensure_cover_webp(
+    cover_urls: list[str] | None = None,
+    album_dir: Path | None = None,
     artist: str = "",
     album: str = "",
     title: str = "",
     dry_run: bool = False,
 ) -> Path | None:
+    if album_dir is None:
+        return None
+
     webp_target = album_dir / "cover.webp"
     if webp_target.exists() and webp_target.stat().st_size > 0:
         return webp_target
@@ -552,13 +588,13 @@ def ensure_album_cover(
 
     album_dir.mkdir(parents=True, exist_ok=True)
 
-    # 1. Try animated HLS artwork via artwork.m8tec.top first
+    # 1. Animated HLS artwork via artwork.m8tec.top first
     for m3u8_url in fetch_m8tec_animated_urls(artist, album, title):
         if _encode_hls_to_animated_webp(m3u8_url, webp_target):
             print(f"    [COVER] Saved animated {webp_target.name} (m8tec)")
             return webp_target
 
-    # 2. Fallback to static iTunes 1024x1024bb + any caller-provided cover_urls
+    # 2. Static iTunes 1024x1024bb + any caller-provided cover_urls
     ordered_urls: list[str] = []
     seen_urls: set[str] = set()
     for u in [*fetch_itunes_cover_urls(artist, album), *(cover_urls or [])]:
@@ -570,59 +606,32 @@ def ensure_album_cover(
         return None
 
     tmp_raw = album_dir / ".cover_raw_tmp"
-    for url in ordered_urls:
-        try:
-            resp = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=15)
-            if resp.status_code != 200 or not resp.content:
+    try:
+        for url in ordered_urls:
+            try:
+                resp = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=15)
+                if resp.status_code != 200 or not resp.content:
+                    continue
+                data = resp.content
+            except Exception:
                 continue
-            data = resp.content
-        except Exception:
-            continue
 
-        tmp_raw.write_bytes(data)
-        dims = _probe_image_dimensions(tmp_raw)
-        if not dims:
-            tmp_raw.unlink(missing_ok=True)
-            continue
-
-        w, h = dims
-        if min(w, h) < MIN_COVER_PX:
-            tmp_raw.unlink(missing_ok=True)
-            continue
-
-        needs_downscale = max(w, h) > TARGET_COVER_PX
-        animated = _is_animated_webp(data)
-
-        try:
-            if animated and not needs_downscale:
-                tmp_raw.replace(webp_target)
-                print(f"    [COVER] Saved animated {webp_target.name}")
-                return webp_target
-
-            if shutil.which("ffmpeg"):
-                cmd = ["ffmpeg", "-y", "-loglevel", "error", "-i", str(tmp_raw)]
-                if needs_downscale:
-                    cmd += [
-                        "-vf",
-                        f"scale='min({TARGET_COVER_PX},iw)':'min({TARGET_COVER_PX},ih)':force_original_aspect_ratio=decrease",
-                    ]
-                if animated:
-                    cmd += ["-c:v", "libwebp", "-loop", "0", "-quality", "85"]
-                else:
-                    cmd += ["-c:v", "libwebp", "-quality", "88"]
-                cmd.append(str(webp_target))
-                subprocess.run(cmd, check=True)
-                tmp_raw.unlink(missing_ok=True)
-                if webp_target.exists() and webp_target.stat().st_size > 0:
-                    print(f"    [COVER] Saved static {webp_target.name} (iTunes/fallback)")
+            tmp_raw.write_bytes(data)
+            try:
+                if _save_static_as_webp(tmp_raw, data, webp_target):
+                    kind = "animated" if _is_animated_webp(data) else "static"
+                    print(f"    [COVER] Saved {kind} {webp_target.name} (iTunes/fallback)")
                     return webp_target
-        except Exception:
-            tmp_raw.unlink(missing_ok=True)
+            except Exception:
+                pass
+    finally:
+        tmp_raw.unlink(missing_ok=True)
 
-    tmp_raw.unlink(missing_ok=True)
     return None
 
-    
+
+ensure_album_cover = ensure_cover_webp
+
 # ==============================================================================
 # SECTION 6: LYRICS FETCHING & CLEANUP (NEXT TO TRACKS)
 # ==============================================================================
