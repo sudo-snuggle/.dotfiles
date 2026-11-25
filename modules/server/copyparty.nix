@@ -238,7 +238,7 @@
         "140:8081"
       ];
       volumes = [
-        "/home/yasiru/Downloads:/downloads"
+        "/home/yasiru/Downloads/metube:/downloads"
       ];
       environment = {
         DEFAULT_OPTION_AUTO_START = "false";
