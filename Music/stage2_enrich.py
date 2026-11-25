@@ -381,265 +381,250 @@ def embed_tags(
         print(f"    [WARN] Tag embed failed for {audio_path.name}: {exc}")
 
 # ==============================================================================
-# SECTION 5: ALBUM COVER ARTWORK (ANIMATED m8tec + STATIC FALLBACK)
+# SECTION 5: ALBUM COVER ART (ANIMATED M8TEC + STATIC ITUNES -> cover.webp)
 # ==============================================================================
 
-def clamp_to_600_1024(w: int, h: int) -> tuple[int, int]:
-    if w <= 0 or h <= 0:
-        return (600, 600)
-    min_d = min(w, h)
-    max_d = max(w, h)
-    if min_d < 600:
-        scale = 600.0 / min_d
-        return (max(600, min(1024, round(w * scale))), max(600, min(1024, round(h * scale))))
-    if max_d > 1024:
-        scale = 1024.0 / max_d
-        return (max(600, min(1024, round(w * scale))), max(600, min(1024, round(h * scale))))
-    return (w, h)
+MIN_COVER_PX = 600
+TARGET_COVER_PX = 1024
 
 
-def probe_video_dimensions(media_input: str) -> tuple[int, int]:
-    if shutil.which("ffprobe") is None:
-        return (600, 600)
+def fetch_m8tec_animated_urls(artist: str, album: str, title: str = "") -> list[str]:
+    query_artist = artist.strip()
+    query_album = album.strip()
+    if not query_artist and not query_album:
+        return []
+
+    params = {"artist": query_artist, "album": query_album}
+    if title.strip():
+        params["title"] = title.strip()
+
     try:
-        res = subprocess.run(
-            [
-                "ffprobe",
-                "-v",
-                "error",
-                "-select_streams",
-                "v:0",
-                "-show_entries",
-                "stream=width,height",
-                "-of",
-                "json",
-                media_input,
-            ],
-            capture_output=True,
-            text=True,
-            timeout=20,
+        resp = requests.get(
+            "https://artwork.m8tec.top/api/v1/artwork/search",
+            params=params,
+            headers={"User-Agent": USER_AGENT},
+            timeout=15,
         )
-        if res.returncode == 0 and res.stdout:
-            data = json.loads(res.stdout)
-            streams = data.get("streams") or []
-            if streams:
-                w = int(streams[0].get("width") or 0)
-                h = int(streams[0].get("height") or 0)
-                if w > 0 and h > 0:
-                    return (w, h)
+        if resp.status_code != 200:
+            return []
+        data = resp.json() or {}
+        urls: list[str] = []
+        for key in ("url", "url_tall"):
+            val = str(data.get(key) or "").strip()
+            if val and val not in urls:
+                urls.append(val)
+        return urls
     except Exception:
-        pass
-    return (600, 600)
+        return []
 
 
-def pick_best_hls_variant_url(master_m3u8_url: str, playlist_text: str) -> str:
-    best_url = master_m3u8_url
-    best_pixels = -1
-    lines = [ln.strip() for ln in playlist_text.splitlines() if ln.strip()]
-    for idx, line in enumerate(lines):
-        if line.startswith("#EXT-X-STREAM-INF") and idx + 1 < len(lines):
-            next_uri = lines[idx + 1]
-            if next_uri.startswith("#"):
-                continue
-            m_res = re.search(r"RESOLUTION=(\d+)x(\d+)", line)
-            pixels = int(m_res.group(1)) * int(m_res.group(2)) if m_res else 0
-            if pixels > best_pixels:
-                best_pixels = pixels
-                best_url = urljoin(master_m3u8_url, next_uri)
-    return best_url
-
-
-def download_hls_segments_to_temp_file(m3u8_url: str, out_file: Path) -> bool:
-    try:
-        r = requests.get(m3u8_url, headers=M8TEC_HEADERS, timeout=20)
-        if r.status_code != 200 or "#EXTM3U" not in r.text:
-            return False
-
-        variant_url = pick_best_hls_variant_url(m3u8_url, r.text)
-        vr = requests.get(variant_url, headers=M8TEC_HEADERS, timeout=20)
-        if vr.status_code != 200 or "#EXTM3U" not in vr.text:
-            return False
-
-        segment_urls: list[str] = []
-        for raw_line in vr.text.splitlines():
-            line = raw_line.strip()
-            if not line:
-                continue
-            if line.startswith("#EXT-X-MAP:"):
-                m_uri = re.search(r'URI="([^"]+)"', line)
-                if m_uri:
-                    segment_urls.append(urljoin(variant_url, m_uri.group(1)))
-            elif not line.startswith("#"):
-                segment_urls.append(urljoin(variant_url, line))
-
-        if not segment_urls:
-            return False
-
-        buf = bytearray()
-        for seg_url in segment_urls:
-            for _attempt in range(3):
-                try:
-                    sr = requests.get(seg_url, headers=M8TEC_HEADERS, timeout=20)
-                    if sr.status_code == 200 and sr.content:
-                        buf.extend(sr.content)
-                        break
-                except Exception:
-                    time.sleep(0.5)
-
-        if not buf:
-            return False
-
-        out_file.write_bytes(bytes(buf))
-        return True
-    except Exception:
-        return False
-
-
-def convert_hls_or_video_to_webp(stream_url: str, dest_webp: Path) -> bool:
-    if shutil.which("ffmpeg") is None:
-        return False
-
-    tmp_webp = dest_webp.with_suffix(".tmp.webp")
-
-    with tempfile.TemporaryDirectory() as tmpdir:
-        input_target = stream_url
-        is_remote = stream_url.startswith(("http://", "https://"))
-
-        if ".m3u8" in stream_url.lower():
-            local_stream = Path(tmpdir) / "stream.ts"
-            if download_hls_segments_to_temp_file(stream_url, local_stream):
-                input_target = str(local_stream)
-                is_remote = False
-        elif stream_url.lower().endswith((".mp4", ".m4v", ".mov")):
-            try:
-                resp = requests.get(stream_url, headers=M8TEC_HEADERS, timeout=30)
-                if resp.status_code == 200 and resp.content:
-                    local_vid = Path(tmpdir) / "cover.mp4"
-                    local_vid.write_bytes(resp.content)
-                    input_target = str(local_vid)
-                    is_remote = False
-            except Exception:
-                pass
-
-        src_w, src_h = probe_video_dimensions(input_target)
-        out_w, out_h = clamp_to_600_1024(src_w, src_h)
-
-        cmd = ["ffmpeg", "-y", "-loglevel", "error"]
-        if is_remote:
-            cmd.extend(["-reconnect", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "5"])
-        cmd.extend([
-            "-i",
-            input_target,
-            "-vf",
-            f"scale={out_w}:{out_h}:flags=lanczos",
-            "-loop",
-            "0",
-            "-an",
-            "-q:v",
-            "80",
-            str(tmp_webp),
-        ])
-        try:
-            res = subprocess.run(cmd, timeout=60)
-            if res.returncode == 0 and tmp_webp.exists() and tmp_webp.stat().st_size > 0:
-                tmp_webp.replace(dest_webp)
-                return True
-        except Exception:
-            pass
-        finally:
-            tmp_webp.unlink(missing_ok=True)
-
-    return False
-
-
-def extract_m3u8_urls_from_payload(obj: Any, found: list[str]) -> None:
-    if isinstance(obj, str):
-        s = obj.strip()
-        if s.startswith(("http://", "https://")) and any(
-            k in s.lower() for k in (".m3u8", ".mp4", ".m4v", ".mov", "animated", "motion")
-        ):
-            found.append(s)
-    elif isinstance(obj, dict):
-        for v in obj.values():
-            extract_m3u8_urls_from_payload(v, found)
-    elif isinstance(obj, list):
-        for v in obj:
-            extract_m3u8_urls_from_payload(v, found)
-
-
-def fetch_m8tec_animated_webp(artist: str, album: str, title: str, dest_webp: Path) -> bool:
-    clean_artist = primary_artist_only(artist)
-    params_list = [
-        {"artist": clean_artist, "album": album, "title": title},
-        {"artist": clean_artist, "album": album},
-    ]
-
-    stream_candidates: list[str] = []
-    for params in params_list:
-        q_params = {k: v for k, v in params.items() if v}
-        try:
-            resp = requests.get(
-                ARTWORK_SEARCH_URL,
-                params=q_params,
-                headers=M8TEC_HEADERS,
-                timeout=20,
-            )
-            if resp.status_code != 200:
-                continue
-            ctype = resp.headers.get("Content-Type", "").lower()
-            if "json" in ctype or resp.text.strip().startswith(("{", "[")):
-                extract_m3u8_urls_from_payload(resp.json(), stream_candidates)
-            elif "#EXTM3U" in resp.text:
-                stream_candidates.append(resp.url)
-        except Exception:
-            continue
-
-    seen: set[str] = set()
-    for s_url in stream_candidates:
-        if s_url in seen:
-            continue
-        seen.add(s_url)
-        if convert_hls_or_video_to_webp(s_url, dest_webp):
-            print("    [ART] Saved animated cover.webp via artwork.m8tec.top")
-            return True
-
-    return False
-
-
-def save_static_cover_webp(cover_urls: list[str], dest_webp: Path) -> bool:
-    for url in cover_urls:
-        try:
-            r = requests.get(url, headers=ITUNES_HEADERS, timeout=15)
-            if r.status_code != 200 or not r.content:
-                continue
-            with Image.open(io.BytesIO(r.content)) as im:
-                rgb = im.convert("RGB")
-                out_w, out_h = clamp_to_600_1024(*rgb.size)
-                if (out_w, out_h) != rgb.size:
-                    rgb = rgb.resize((out_w, out_h), Image.Resampling.LANCZOS)
-                rgb.save(dest_webp, format="WEBP", quality=90, method=6)
-                print(f"    [ART] Saved {out_w}x{out_h} static cover.webp")
-                return True
-        except Exception:
-            continue
-    return False
-
-
-def ensure_cover_webp(
+def fetch_itunes_cover_urls(
     artist: str,
     album: str,
-    title: str,
-    static_covers: list[str],
-    dest_webp: Path,
-) -> None:
-    if dest_webp.exists() and dest_webp.stat().st_size > 0:
-        return
-    if fetch_m8tec_animated_webp(artist, album, title, dest_webp):
-        return
-    save_static_cover_webp(static_covers, dest_webp)
+    size_px: int = TARGET_COVER_PX,
+    limit: int = 5,
+) -> list[str]:
+    query = f"{artist} {album}".strip()
+    if not query:
+        return []
+    try:
+        resp = requests.get(
+            "https://itunes.apple.com/search",
+            params={"term": query, "media": "music", "entity": "album", "limit": limit},
+            headers={"User-Agent": USER_AGENT},
+            timeout=12,
+        )
+        if resp.status_code != 200:
+            return []
+        urls: list[str] = []
+        seen: set[str] = set()
+        for item in (resp.json() or {}).get("results", []):
+            art = str(item.get("artworkUrl100") or "").strip()
+            if not art:
+                continue
+            hi_url = re.sub(r"/\d+x\d+bb\.", f"/{size_px}x{size_px}bb.", art)
+            if hi_url not in seen:
+                seen.add(hi_url)
+                urls.append(hi_url)
+        return urls
+    except Exception:
+        return []
 
+
+def _probe_image_dimensions(img_path: Path) -> tuple[int, int] | None:
+    try:
+        from PIL import Image
+
+        with Image.open(img_path) as im:
+            return im.size
+    except Exception:
+        pass
+
+    if shutil.which("ffprobe"):
+        try:
+            proc = subprocess.run(
+                [
+                    "ffprobe",
+                    "-v",
+                    "error",
+                    "-select_streams",
+                    "v:0",
+                    "-show_entries",
+                    "stream=width,height",
+                    "-of",
+                    "csv=p=0:s=x",
+                    str(img_path),
+                ],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            parts = proc.stdout.strip().split("x")
+            if len(parts) == 2:
+                return int(parts[0]), int(parts[1])
+        except Exception:
+            pass
+    return None
+
+
+def _is_animated_webp(data: bytes) -> bool:
+    if len(data) < 22 or data[:4] != b"RIFF" or data[8:12] != b"WEBP":
+        return False
+    return data[12:16] == b"VP8X" and bool(data[20] & 0x02)
+
+
+def _encode_hls_to_animated_webp(hls_url: str, webp_target: Path) -> bool:
+    if not shutil.which("ffmpeg"):
+        return False
+
+    tmp_out = webp_target.parent / ".cover_anim_tmp.webp"
+    try:
+        vf = (
+            f"fps=24,"
+            f"scale='if(gt(iw,ih),min({TARGET_COVER_PX},iw),-2)':"
+            f"'if(gt(ih,iw),min({TARGET_COVER_PX},ih),-2)'"
+        )
+        cmd = [
+            "ffmpeg",
+            "-y",
+            "-loglevel",
+            "error",
+            "-i",
+            hls_url,
+            "-vf",
+            vf,
+            "-c:v",
+            "libwebp",
+            "-loop",
+            "0",
+            "-quality",
+            "80",
+            "-an",
+            str(tmp_out),
+        ]
+        subprocess.run(cmd, check=True, timeout=60)
+        dims = _probe_image_dimensions(tmp_out)
+        if not dims or min(dims) < MIN_COVER_PX:
+            tmp_out.unlink(missing_ok=True)
+            return False
+        tmp_out.replace(webp_target)
+        return webp_target.exists() and webp_target.stat().st_size > 0
+    except Exception:
+        tmp_out.unlink(missing_ok=True)
+        return False
+
+
+def ensure_album_cover(
+    cover_urls: list[str],
+    album_dir: Path,
+    artist: str = "",
+    album: str = "",
+    title: str = "",
+    dry_run: bool = False,
+) -> Path | None:
+    webp_target = album_dir / "cover.webp"
+    if webp_target.exists() and webp_target.stat().st_size > 0:
+        return webp_target
+
+    if dry_run:
+        print(f"  [DRY-RUN] Fetch cover art -> {webp_target}")
+        return None
+
+    album_dir.mkdir(parents=True, exist_ok=True)
+
+    # 1. Try animated HLS artwork via artwork.m8tec.top first
+    for m3u8_url in fetch_m8tec_animated_urls(artist, album, title):
+        if _encode_hls_to_animated_webp(m3u8_url, webp_target):
+            print(f"    [COVER] Saved animated {webp_target.name} (m8tec)")
+            return webp_target
+
+    # 2. Fallback to static iTunes 1024x1024bb + any caller-provided cover_urls
+    ordered_urls: list[str] = []
+    seen_urls: set[str] = set()
+    for u in [*fetch_itunes_cover_urls(artist, album), *(cover_urls or [])]:
+        if u and u not in seen_urls:
+            seen_urls.add(u)
+            ordered_urls.append(u)
+
+    if not ordered_urls:
+        return None
+
+    tmp_raw = album_dir / ".cover_raw_tmp"
+    for url in ordered_urls:
+        try:
+            resp = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=15)
+            if resp.status_code != 200 or not resp.content:
+                continue
+            data = resp.content
+        except Exception:
+            continue
+
+        tmp_raw.write_bytes(data)
+        dims = _probe_image_dimensions(tmp_raw)
+        if not dims:
+            tmp_raw.unlink(missing_ok=True)
+            continue
+
+        w, h = dims
+        if min(w, h) < MIN_COVER_PX:
+            tmp_raw.unlink(missing_ok=True)
+            continue
+
+        needs_downscale = max(w, h) > TARGET_COVER_PX
+        animated = _is_animated_webp(data)
+
+        try:
+            if animated and not needs_downscale:
+                tmp_raw.replace(webp_target)
+                print(f"    [COVER] Saved animated {webp_target.name}")
+                return webp_target
+
+            if shutil.which("ffmpeg"):
+                cmd = ["ffmpeg", "-y", "-loglevel", "error", "-i", str(tmp_raw)]
+                if needs_downscale:
+                    cmd += [
+                        "-vf",
+                        f"scale='min({TARGET_COVER_PX},iw)':'min({TARGET_COVER_PX},ih)':force_original_aspect_ratio=decrease",
+                    ]
+                if animated:
+                    cmd += ["-c:v", "libwebp", "-loop", "0", "-quality", "85"]
+                else:
+                    cmd += ["-c:v", "libwebp", "-quality", "88"]
+                cmd.append(str(webp_target))
+                subprocess.run(cmd, check=True)
+                tmp_raw.unlink(missing_ok=True)
+                if webp_target.exists() and webp_target.stat().st_size > 0:
+                    print(f"    [COVER] Saved static {webp_target.name} (iTunes/fallback)")
+                    return webp_target
+        except Exception:
+            tmp_raw.unlink(missing_ok=True)
+
+    tmp_raw.unlink(missing_ok=True)
+    return None
+
+    
 # ==============================================================================
-# SECTION 6: LYRICS FETCHING & CLEANUP (.LRC NEXT TO TRACKS)
+# SECTION 6: LYRICS FETCHING & CLEANUP (NEXT TO TRACKS)
 # ==============================================================================
 
 def has_syllable_sync(lyrics_text: str) -> bool:
@@ -661,7 +646,7 @@ def cleanup_junk_lyrics_in_album(album_dir: Path, audio_files: list[Path]) -> No
     }
 
     for p in list(album_dir.iterdir()):
-        if not p.is_file() or p.suffix.lower() != ".lrc":
+        if not p.is_file() or p.suffix.lower() not in {".lrc", ".ttml"}:
             continue
         p_stem = p.stem.lower().strip()
         if p_stem in titles_only and any(s.startswith(p_stem + " - ") for s in stems):
@@ -673,9 +658,10 @@ def collect_local_lyrics(
     title: str,
     album_dir: Path,
 ) -> Path | None:
-    target_lrc = album_dir / f"{track_stem}.lrc"
-    if target_lrc.exists() and target_lrc.stat().st_size > 0:
-        return target_lrc
+    for ext in (".ttml", ".lrc", ".elrc"):
+        existing = album_dir / f"{track_stem}{ext}"
+        if existing.exists() and existing.stat().st_size > 0:
+            return existing
 
     candidates = {track_stem.lower().strip(), title.lower().strip()}
     candidates.discard("")
@@ -698,13 +684,39 @@ def collect_local_lyrics(
                     try:
                         raw = src.read_text(encoding="utf-8", errors="ignore").strip()
                         if raw:
-                            target_lrc.write_text(raw + "\n", encoding="utf-8")
+                            out_ext = ".ttml" if ("<tt" in raw or fl.endswith(".ttml")) else ".lrc"
+                            target = album_dir / f"{track_stem}{out_ext}"
+                            target.write_text(raw + "\n", encoding="utf-8")
                             if src.parent != album_dir.resolve() and DOWNLOADS_DIR.resolve() in src.resolve().parents:
                                 src.unlink(missing_ok=True)
-                            return target_lrc
+                            return target
                     except Exception:
                         pass
     return None
+
+
+def fetch_unison_raw(artist: str, title: str) -> tuple[str, str] | None:
+    """Returns (content, ext) where ext is '.ttml' or '.lrc'."""
+    try:
+        r = requests.get(
+            "https://unison.betterlyrics.org/lyrics",
+            params={"song": title, "artist": artist},
+            headers={"User-Agent": USER_AGENT},
+            timeout=15,
+        )
+        if r.status_code != 200:
+            return None
+        payload = r.json() or {}
+        if not payload.get("success"):
+            return None
+        data = payload.get("data") or {}
+        raw = (data.get("lyrics") or "").strip()
+        if not raw:
+            return None
+        ext = ".ttml" if "<tt" in raw else ".lrc"
+        return raw, ext
+    except Exception:
+        return None
 
 
 def fetch_lyrics_lrc(
@@ -714,38 +726,44 @@ def fetch_lyrics_lrc(
     track_stem: str,
     album_dir: Path,
 ) -> Path | None:
-    dest_lrc = album_dir / f"{track_stem}.lrc"
-    if dest_lrc.exists() and dest_lrc.stat().st_size > 0:
-        return dest_lrc
-
     local_found = collect_local_lyrics(track_stem, title, album_dir)
     if local_found:
         return local_found
 
+    clean_artist = primary_artist_only(artist)
+    clean_title = clean_lyric_title(title) or title
+
+    # 1. Unison (saves raw format as-is: .ttml or .lrc)
+    unison_res = fetch_unison_raw(clean_artist, clean_title)
+    if unison_res:
+        raw_text, ext = unison_res
+        dest_file = album_dir / f"{track_stem}{ext}"
+        dest_file.write_text(raw_text + "\n", encoding="utf-8")
+        print(f"    [LYRICS] Saved {dest_file.name} (unison)")
+        return dest_file
+
+    # 2. syncedlyrics fallback (.lrc)
     if syncedlyrics is None:
         return None
 
-    clean_artist = primary_artist_only(artist)
-    clean_title = clean_lyric_title(title) or title
-    queries = [
-        f"{clean_artist} {clean_title}".strip(),
-        f"{clean_title} {clean_artist}".strip(),
-    ]
+    query = f"{clean_artist} {clean_title}".strip()
+    lyrics_text: str | None = None
+    try:
+        lyrics_text = syncedlyrics.search(query, enhanced=True)
+        if not lyrics_text or not lyrics_text.strip():
+            lyrics_text = syncedlyrics.search(query, enhanced=False)
+    except Exception as exc:
+        print(f"    [WARN] syncedlyrics error for '{query}': {exc}", file=sys.stderr)
+        return None
 
-    for query in queries:
-        for enhanced_flag in (True, False):
-            try:
-                lyrics_text = syncedlyrics.search(query, enhanced=enhanced_flag)
-                if lyrics_text and lyrics_text.strip():
-                    dest_lrc.write_text(lyrics_text.strip() + "\n", encoding="utf-8")
-                    sync_kind = "syllable/word-synced" if has_syllable_sync(lyrics_text) else "line-synced"
-                    print(f"    [LYRICS] Saved {dest_lrc.name} ({sync_kind})")
-                    return dest_lrc
-            except Exception as exc:
-                print(f"    [WARN] syncedlyrics error ({query}, enhanced={enhanced_flag}): {exc}", file=sys.stderr)
+    if not lyrics_text or not lyrics_text.strip():
+        return None
 
-    return None
-
+    dest_lrc = album_dir / f"{track_stem}.lrc"
+    dest_lrc.write_text(lyrics_text.strip() + "\n", encoding="utf-8")
+    sync_kind = "syllable/enhanced-synced" if has_syllable_sync(lyrics_text) else "line-synced"
+    print(f"    [LYRICS] Saved {dest_lrc.name} ({sync_kind}, syncedlyrics)")
+    return dest_lrc
 
 # ==============================================================================
 # SECTION 7: ALBUM & USER ORCHESTRATION + ENTRYPOINT
