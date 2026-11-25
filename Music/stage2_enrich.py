@@ -379,6 +379,9 @@ def embed_tags(
             easy.save()
     except Exception as exc:
         print(f"    [WARN] Tag embed failed for {audio_path.name}: {exc}")
+
+
+
 # ==============================================================================
 # SECTION 5: ALBUM COVER ART (DOWNLOAD FIRST -> CONVERT TO 600x600 cover.webp)
 # ==============================================================================
@@ -500,44 +503,71 @@ def _is_animated_webp(path: Path) -> bool:
         return False
 
 
+def _resolve_m3u8_media_uris(m3u8_url: str, session: requests.Session) -> list[str]:
+    from urllib.parse import urljoin
+
+    resp = session.get(m3u8_url, timeout=15)
+    resp.raise_for_status()
+    lines = [line.strip() for line in resp.text.splitlines() if line.strip() and not line.startswith("#")]
+    if not lines:
+        return []
+
+    resolved = [urljoin(m3u8_url, line) for line in lines]
+
+    # If master playlist pointing to sub-playlists (.m3u8), pick the first sub-playlist and read its segments
+    if any(u.lower().split("?")[0].endswith(".m3u8") for u in resolved):
+        sub_url = next(u for u in resolved if u.lower().split("?")[0].endswith(".m3u8"))
+        sub_resp = session.get(sub_url, timeout=15)
+        sub_resp.raise_for_status()
+        sub_lines = [
+            line.strip()
+            for line in sub_resp.text.splitlines()
+            if line.strip() and not line.startswith("#")
+        ]
+        return [urljoin(sub_url, line) for line in sub_lines]
+
+    return resolved
+
+
+def _download_hls_via_requests(hls_url: str, raw_path: Path) -> bool:
+    raw_path.unlink(missing_ok=True)
+    session = requests.Session()
+    session.headers.update({"User-Agent": USER_AGENT})
+
+    try:
+        segments = _resolve_m3u8_media_uris(hls_url, session)
+        if not segments:
+            return False
+
+        written = 0
+        with open(raw_path, "wb") as out_f:
+            for seg_url in segments:
+                seg_ok = False
+                for _attempt in range(3):
+                    try:
+                        r = session.get(seg_url, timeout=15)
+                        if r.status_code == 200 and r.content:
+                            out_f.write(r.content)
+                            written += len(r.content)
+                            seg_ok = True
+                            break
+                    except Exception:
+                        continue
+                if not seg_ok:
+                    break
+
+        return written > 0 and raw_path.exists() and raw_path.stat().st_size > 0
+    except Exception:
+        raw_path.unlink(missing_ok=True)
+        return False
+    finally:
+        session.close()
+
+
 def _download_raw_source(url: str, raw_path: Path, is_hls: bool = False) -> bool:
     raw_path.unlink(missing_ok=True)
-    if is_hls or url.lower().endswith(".m3u8"):
-        if not shutil.which("ffmpeg"):
-            return False
-        tmp_mp4 = raw_path.with_suffix(".dl.mp4")
-        tmp_mp4.unlink(missing_ok=True)
-        try:
-            cmd = [
-                "ffmpeg",
-                "-y",
-                "-loglevel",
-                "error",
-                "-user_agent",
-                USER_AGENT,
-                "-reconnect",
-                "1",
-                "-reconnect_streamed",
-                "1",
-                "-reconnect_delay_max",
-                "5",
-                "-i",
-                url,
-                "-c",
-                "copy",
-                "-movflags",
-                "+faststart",
-                str(tmp_mp4),
-            ]
-            subprocess.run(cmd, check=True, timeout=60)
-            if tmp_mp4.exists() and tmp_mp4.stat().st_size > 0:
-                tmp_mp4.replace(raw_path)
-                return True
-        except Exception:
-            pass
-        finally:
-            tmp_mp4.unlink(missing_ok=True)
-        return False
+    if is_hls or url.lower().split("?")[0].endswith(".m3u8"):
+        return _download_hls_via_requests(url, raw_path)
 
     try:
         resp = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=15)
@@ -649,7 +679,7 @@ def ensure_cover_webp(
     raw_static = target_dir / ".cover_raw_static"
 
     try:
-        # 1. Download m8tec animated sources locally first, then convert to 600x600 animated webp
+        # 1. Download m8tec animated HLS segments via requests first, then encode locally to 600px webp
         m3u8_candidates: list[str] = []
         for u in [*fetch_m8tec_animated_urls(artist, album, title), *(animated_covers or [])]:
             if u and u not in m3u8_candidates:
@@ -661,7 +691,7 @@ def ensure_cover_webp(
                     print(f"    [COVER] Saved animated {webp_target.name} (m8tec)")
                     return webp_target
 
-        # 2. Download iTunes + static fallback sources locally first, then convert to 600x600 webp
+        # 2. Download iTunes + static fallback sources locally first, then encode to 600px webp
         ordered_urls: list[str] = []
         seen_urls: set[str] = set()
         for u in [
@@ -688,6 +718,7 @@ def ensure_cover_webp(
 
 
 ensure_album_cover = ensure_cover_webp
+
 # ==============================================================================
 # SECTION 6: LYRICS FETCHING & CLEANUP (NEXT TO TRACKS)
 # ==============================================================================
