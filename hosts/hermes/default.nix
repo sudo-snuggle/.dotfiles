@@ -16,6 +16,7 @@
     ../../modules/server/lid-off.nix
     ../../modules/server/copyparty.nix
     ../../modules/server/ai.nix
+    ../../modules/server/ap.nix
     ../../modules/server/printing.nix
     #../../modules/server/timer.nix
     ../../modules/laptop/tlp-server.nix
@@ -207,7 +208,7 @@
   zramSwap = {
   enable = true;
   algorithm = "zstd";
-  memoryPercent = 50; # Allows up to 2 GB of compressed swap space on a 4 GB system
+  memoryPercent = 60; # Allows up to 2 
 };
 
 

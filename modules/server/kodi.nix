@@ -25,5 +25,5 @@ in
       kodiPkgs.jellyfin
       navidromeAddon
     ]))
-  ];
+  ];i
 }
