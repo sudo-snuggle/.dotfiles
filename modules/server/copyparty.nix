@@ -118,13 +118,13 @@
         "130:3923"
       ];
       volumes = [
-        "/home/yasiru/Documents:/w/Documents:rw"
+"/home/yasiru/Documents:/w/Documents:rw"
         "/home/yasiru/Downloads:/w/Downloads:rw"
         "/home/yasiru/Music:/w/Music:rw"
         "/home/yasiru/Pictures:/w/Pictures:rw"
         "/home/yasiru/Videos:/w/Videos:rw"
-        "/home/yasiru/.dotfiles:/w/.dotfiles:rw"
-        "/mnt/ext:/hdd:ro"
+        "/home/yasiru/.dotfiles:/w/dotfiles:rw"
+        "/mnt/ext:/w/hdd:rw"
       ];
       cmd = [
         "-v"
