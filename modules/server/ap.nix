@@ -1,7 +1,7 @@
 { config, lib, pkgs, ... }:
 
 let
-  wanIf = "wlp9s0"; # Upstream Wi-Fi interface
+  wanIf = "wlp9s0"; # Upstream Wi-Fi client interface (SLT-Fiber-2.4G_e130)
   apIf = "ap0";     # Virtual AP interface created on wlp9s0
   rate = "600kbit";
 in
@@ -15,15 +15,11 @@ in
     hostapd
   ];
 
-  # Keep wpa_supplicant scoped to wanIf if networking.wireless is enabled
-  networking.wireless.interfaces = lib.mkIf config.networking.wireless.enable [ wanIf ];
-
-  # Create virtual AP interface ap0 on wlp9s0 before hostapd starts
+  # Create virtual AP interface ap0 on wlp9s0 without touching wpa_supplicant
   systemd.services.zoom-ap-iface = {
     description = "Create virtual AP interface ${apIf} on ${wanIf}";
-    after = [ "network.target" ];
-    wantedBy = [ "multi-user.target" ];
-    before = [ "hostapd.service" "AP.service" ];
+    after = [ "network-online.target" "wpa_supplicant.service" ];
+    wants = [ "network-online.target" ];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
@@ -31,7 +27,7 @@ in
         set -euo pipefail
         ${pkgs.iw}/bin/iw dev ${apIf} del 2>/dev/null || true
         ${pkgs.iw}/bin/iw dev ${wanIf} interface add ${apIf} type __ap
-        ${pkgs.iproute2}/bin/ip addr add 10.42.0.1/24 dev ${apIf} 2>/dev/null || true
+        ${pkgs.iproute2}/bin/ip addr replace 10.42.0.1/24 dev ${apIf}
         ${pkgs.iproute2}/bin/ip link set dev ${apIf} up
       '';
       ExecStop = pkgs.writeShellScript "remove-ap-iface" ''
@@ -45,7 +41,7 @@ in
     enable = true;
     radios.${apIf} = {
       band = "2g";
-      channel = 6; # Match your upstream router's current channel
+      channel = 11;
       networks.${apIf} = {
         ssid = "nix_acess_point";
         authentication = {
