@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, lib, pkgs, ... }:
 
 let
   wanIf = "wlp9s0"; # Upstream Wi-Fi interface
@@ -6,7 +6,7 @@ let
   rate = "600kbit";
 in
 {
-  boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
+  boot.kernel.sysctl."net.ipv4.ip_forward" = lib.mkDefault 1;
   boot.kernelModules = [ "ifb" ];
 
   environment.systemPackages = with pkgs; [
@@ -14,6 +14,9 @@ in
     iproute2
     hostapd
   ];
+
+  # Keep wpa_supplicant scoped to wanIf if networking.wireless is enabled
+  networking.wireless.interfaces = lib.mkIf config.networking.wireless.enable [ wanIf ];
 
   # Create virtual AP interface ap0 on wlp9s0 before hostapd starts
   systemd.services.zoom-ap-iface = {
