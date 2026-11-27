@@ -3,6 +3,7 @@
 let
   wanIf = "wlp9s0"; # Upstream Wi-Fi client interface (SLT-Fiber-2.4G_e130)
   apIf = "ap0";     # Virtual AP interface created on wlp9s0
+  apMac = "02:b5:7d:b5:d5:99"; # Locally administered unicast MAC for ap0
   rate = "600kbit";
 in
 {
@@ -15,7 +16,7 @@ in
     hostapd
   ];
 
-  # Create virtual AP interface ap0 on wlp9s0 without touching wpa_supplicant
+  # Create virtual AP interface ap0 on wlp9s0 with a non-colliding MAC address
   systemd.services.zoom-ap-iface = {
     description = "Create virtual AP interface ${apIf} on ${wanIf}";
     after = [ "network-online.target" "wpa_supplicant.service" ];
@@ -26,7 +27,7 @@ in
       ExecStart = pkgs.writeShellScript "create-ap-iface" ''
         set -euo pipefail
         ${pkgs.iw}/bin/iw dev ${apIf} del 2>/dev/null || true
-        ${pkgs.iw}/bin/iw dev ${wanIf} interface add ${apIf} type __ap
+        ${pkgs.iw}/bin/iw dev ${wanIf} interface add ${apIf} type __ap addr ${apMac}
         ${pkgs.iproute2}/bin/ip addr replace 10.42.0.1/24 dev ${apIf}
         ${pkgs.iproute2}/bin/ip link set dev ${apIf} up
       '';
@@ -41,7 +42,7 @@ in
     enable = true;
     radios.${apIf} = {
       band = "2g";
-      channel = 11;
+      channel = 11; # Matches wlp9s0 active channel (2462 MHz)
       networks.${apIf} = {
         ssid = "nix_acess_point";
         authentication = {
@@ -52,6 +53,7 @@ in
     };
   };
 
+  # Prevent auto-starting hostapd before manual testing of ap0 and channel 11
   systemd.services.hostapd = {
     wantedBy = lib.mkForce [ ];
     after = [ "zoom-ap-iface.service" ];
