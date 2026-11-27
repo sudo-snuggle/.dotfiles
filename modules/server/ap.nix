@@ -1,7 +1,7 @@
 { config, pkgs, ... }:
 
 let
-  wanIf = "wlp9s0"; # Upstream Wi-Fi (already connected)
+  wanIf = "wlp9s0"; # Upstream Wi-Fi interface
   apIf = "ap0";     # Virtual AP interface created on wlp9s0
   rate = "600kbit";
 in
@@ -13,7 +13,6 @@ in
     iw
     iproute2
     hostapd
-    dnsmasq
   ];
 
   # Create virtual AP interface ap0 on wlp9s0 before hostapd starts
@@ -21,7 +20,7 @@ in
     description = "Create virtual AP interface ${apIf} on ${wanIf}";
     after = [ "network.target" ];
     wantedBy = [ "multi-user.target" ];
-    before = [ "hostapd.service" "dnsmasq.service" "AP.service" ];
+    before = [ "hostapd.service" "AP.service" ];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
@@ -40,27 +39,17 @@ in
   };
 
   services.hostapd = {
-  enable = true;
-  radios.${apIf} = {
-    band = "2g";
-    channel = 6;
-    networks.${apIf} = {
-      ssid = "nix_acess_point";
-      authentication = {
-        mode = "wpa2-sha1";
-        wpaPassword = "change-this-password";
-      };
-    };
-  };
-};
-
-  services.dnsmasq = {
     enable = true;
-    settings = {
-      interface = apIf;
-      bind-interfaces = true;
-      dhcp-range = "10.42.0.10,10.42.0.100,255.255.255.0,12h";
-      dhcp-option = [ "option:router,10.42.0.1" "option:dns-server,10.42.0.1" ];
+    radios.${apIf} = {
+      band = "2g";
+      channel = 6; # Match your upstream router's current channel
+      networks.${apIf} = {
+        ssid = "nix_acess_point";
+        authentication = {
+          mode = "wpa2-sha1";
+          wpaPassword = "change-this-password";
+        };
+      };
     };
   };
 
@@ -73,8 +62,7 @@ in
 
   networking.firewall = {
     enable = true;
-    interfaces.${apIf}.allowedUDPPorts = [ 53 67 ];
-    interfaces.${apIf}.allowedTCPPorts = [ 53 ];
+    interfaces.${apIf}.allowedUDPPorts = [ 67 ];
   };
 
   # Toggleable 600kbit cap on ap0 (unit: AP.service)
