@@ -52,6 +52,11 @@ in
     };
   };
 
+  systemd.services.hostapd = {
+    wantedBy = lib.mkForce [ ];
+    after = [ "zoom-ap-iface.service" ];
+  };
+
   # NAT AP subnet (10.42.0.x) out through wlp9s0
   networking.nat = {
     enable = true;
