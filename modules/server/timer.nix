@@ -23,7 +23,7 @@ systemd.services.docker-0030 = {
       ExecStart = pkgs.writeShellScript "docker-0030" ''
         set -euo pipefail
 
-        systemctl start docker-pinchflat.service
+        systemctl start docker-pinchflat
         # Add other container units here without sudo
       '';
     };
@@ -39,7 +39,7 @@ systemd.services.docker-0030 = {
       ExecStart = pkgs.writeShellScript "docker-0630" ''
         set -euo pipefail
 
-        systemctl stop docker-pinchflat.service
+        systemctl stop docker-pinchflat
         # Add other container units here without sudo
       '';
     };
