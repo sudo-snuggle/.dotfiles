@@ -40,19 +40,19 @@ in
   };
 
   services.hostapd = {
-    enable = true;
-    radios.${apIf} = {
-      band = "2g";
-      channel = 6; # Match your upstream router's current channel
-      networks.${apIf} = {
-        ssid = "nix_acess_point";
-        authentication = {
-          mode = "wpa2-psk";
-          wpaPassword = "change-this-password";
-        };
+  enable = true;
+  radios.${apIf} = {
+    band = "2g";
+    channel = 6;
+    networks.${apIf} = {
+      ssid = "nix_acess_point";
+      authentication = {
+        mode = "wpa2-sha1";
+        wpaPassword = "change-this-password";
       };
     };
   };
+};
 
   services.dnsmasq = {
     enable = true;
