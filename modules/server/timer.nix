@@ -22,6 +22,7 @@
         set -euo pipefail
 
         systemctl start docker-pinchflat
+        systemctl start docker-qbittorrent
       '';
     };
   };
@@ -47,6 +48,7 @@
         set -euo pipefail
 
         systemctl stop docker-pinchflat
+        systemctl stop docker-qbittorrent
       '';
     };
   };
