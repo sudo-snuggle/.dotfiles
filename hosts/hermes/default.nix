@@ -18,7 +18,7 @@
     ../../modules/server/ai.nix
     ../../modules/server/ap.nix
     ../../modules/server/printing.nix
-    #../../modules/server/timer.nix
+    ../../modules/server/timer.nix
     ../../modules/laptop/tlp-server.nix
     ../../modules/desktop/wm.nix
     ../../modules/desktop/appimage.nix

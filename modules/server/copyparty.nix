@@ -274,6 +274,7 @@
 
     freshrss = {
       image = "freshrss/freshrss:latest";
+      autoStart = false;
       ports = [
         "200:80"
       ];
@@ -300,6 +301,7 @@
 
     silverbullet = {
       image = "ghcr.io/silverbulletmd/silverbullet:latest";
+      autoStart = false;
       ports = [
         "250:3000"
       ];
@@ -326,7 +328,7 @@
 
     siyuan = {
       image = "b3log/siyuan:latest";
-      autoStart = true;
+      autoStart = false;
       ports = [ "6806:6806" ];
       environment = {
         TZ = "Asia/Colombo";
@@ -342,7 +344,7 @@
 
     qbittorrent = {
       image = "lscr.io/linuxserver/qbittorrent:latest";
-      autoStart = true;
+      autoStart = false;
       ports = [
         "260:8080"
         "6881:6881"
@@ -364,6 +366,7 @@
 
     nextcloud_db = {
       image = "postgres:15-alpine";
+      autoStart = false;
       extraOptions = [ "--network=nextcloud-net" ];
       environment = {
         POSTGRES_DB = "nextcloud";
@@ -377,6 +380,7 @@
 
     nextcloud = {
       image = "nextcloud:apache";
+      autoStart = false;
       ports = [ "6060:80" ];
       extraOptions = [ "--network=nextcloud-net" ];
       environment = {

@@ -1,50 +1,60 @@
 { pkgs, ... }:
 
-let
-  lanSubnet = "192.168.1.0/24"; 
-  wanInterface = "wlp9s0"; # <--- Correct Wi-Fi interface name
-in
 {
-  systemd.services.wan-block = {
-    description = "Block outbound WAN traffic for host and Docker over wlp9s0";
-    script = ''
-      /run/current-system/sw/bin/iptables -F OUTPUT
-      /run/current-system/sw/bin/iptables -F FORWARD
+ 
 
-      # Host Outbound Rules
-      /run/current-system/sw/bin/iptables -A OUTPUT -o lo -j ACCEPT
-      /run/current-system/sw/bin/iptables -A OUTPUT -d ${lanSubnet} -j ACCEPT
-      /run/current-system/sw/bin/iptables -A OUTPUT -o ${wanInterface} -j DROP
-
-      # Docker Container Forward Rules
-      /run/current-system/sw/bin/iptables -A FORWARD -d ${lanSubnet} -j ACCEPT
-      /run/current-system/sw/bin/iptables -A FORWARD -o ${wanInterface} -j DROP
-    '';
-    serviceConfig.Type = "oneshot";
-  };
-
-  systemd.timers.wan-block = {
+  # 2. 12:30 AM Start Timer & Service
+  systemd.timers.docker-0030 = {
+    description = "Start scheduled Docker containers at 12:30 AM";
     wantedBy = [ "timers.target" ];
     timerConfig = {
-      OnCalendar = "*-*-* 07:00:00";
-      Persistent = true;
+      OnCalendar = "*-*-* 00:30:00";
+      Persistent = false; # Never fire late if the server booted after 12:30 AM
+      AccuracySec = "1s";
     };
   };
 
-  systemd.services.wan-unblock = {
-    description = "Restore full outbound internet access";
-    script = ''
-      /run/current-system/sw/bin/iptables -F OUTPUT
-      /run/current-system/sw/bin/iptables -F FORWARD
-    '';
-    serviceConfig.Type = "oneshot";
+  systemd.services.docker-0030 = {
+    description = "12:30 AM Docker start";
+    after = [ "docker.service" ];
+    wants = [ "docker.service" ];
+    path = with pkgs; [ docker bash coreutils ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = pkgs.writeShellScript "docker-0030" ''
+        set -euo pipefail
+
+        sudo systemctl start docker-qbittorrent
+        sudo systemctl start docker-pinchflat     
+ '';
+    };
   };
 
-  systemd.timers.wan-unblock = {
+  # 3. 06:30 AM Stop Timer & Service
+  systemd.timers.docker-0630 = {
+    description = "Stop scheduled Docker containers at 06:30 AM";
     wantedBy = [ "timers.target" ];
     timerConfig = {
-      OnCalendar = "*-*-* 00:10:00";
-      Persistent = true;
+      OnCalendar = "*-*-* 06:30:00";
+      Persistent = false;
+      AccuracySec = "1s";
+    };
+  };
+
+  systemd.services.docker-0630 = {
+    description = "06:30 AM Docker stop";
+    after = [ "docker.service" ];
+    wants = [ "docker.service" ];
+    path = with pkgs; [ docker bash coreutils ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = pkgs.writeShellScript "docker-0630" ''
+        set -euo pipefail
+
+        sudo systemctl stop docker-qbittorrent
+        sudo systemctl stop docker-pinchflat    
+        # Add any other containers to stop at 06:30 AM
+      '';
     };
   };
 }
