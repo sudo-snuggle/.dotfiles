@@ -23,6 +23,9 @@
 
         systemctl start docker-pinchflat
         systemctl start docker-qbittorrent
+
+        python3 stage1_organize.py
+        python3 stage2_enrich.py
       '';
     };
   };

@@ -160,6 +160,7 @@
         "/home/yasiru/Videos/avg:/media:rw"
         "/home/yasiru/Videos/360:/360:rw"
         "/home/yasiru/Videos/channels:/channels:rw"
+        "/mnt/ext/movies:/movies:rw"
       ];
       environment = {
         PUID = "1000";
