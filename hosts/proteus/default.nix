@@ -146,6 +146,7 @@ services.flatpak.enable = true;
     cataclysm-dda
 
     librewolf
+    fladder
   ];
 
 

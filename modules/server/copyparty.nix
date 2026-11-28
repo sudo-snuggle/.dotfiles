@@ -495,5 +495,18 @@ pinchtube = {
 };
 
 
+ anki-sync = {
+      image = "neilalcoseba/anki-sync:latest";
+      autoStart = true;
+      ports = [ "400:8084" ];
+      volumes = [
+        "/home/yasiru/Documents/anki:/data"
+      ];
+      environment = {
+        TZ = "Asia/Colombo";
+        SYNC_USER1 = "user:password";
+      };
+    };
+
   };
 }
